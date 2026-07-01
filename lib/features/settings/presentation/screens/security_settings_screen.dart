@@ -195,11 +195,11 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppDesign.space16),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         children: [
           // Encryption Banner
           Container(
-            padding: const EdgeInsets.all(AppDesign.space16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: AppDesign.primaryEmerald.withValues(alpha: 0.05),
               borderRadius: AppDesign.borderMedium,
@@ -212,9 +212,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 Icon(
                   Icons.enhanced_encryption_rounded,
                   color: AppDesign.primaryEmerald,
-                  size: 28,
+                  size: 20,
                 ),
-                const SizedBox(width: AppDesign.space16),
+                const SizedBox(width: AppDesign.space12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,14 +223,14 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                         'AES-256 Encryption Active',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          fontSize: 13,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Your database and authentication parameters are securely hashed and stored locally.',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10,
                           color: isDark
                               ? Colors.grey.shade400
                               : Colors.grey.shade600,
@@ -243,22 +243,34 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             ),
           ),
 
-          const SizedBox(height: AppDesign.space24),
-          const SectionHeader(title: 'Authentication Status'),
-          const SizedBox(height: AppDesign.space12),
-
+          const SizedBox(height: 8),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: Text(
+              'AUTHENTICATION STATUS',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+                color: Colors.grey,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
           Card(
-            margin: EdgeInsets.zero,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             child: Column(
               children: [
                 ListTile(
+                  dense: true,
                   leading: Icon(
                     Icons.pin_rounded,
                     color: AppDesign.primaryEmerald,
+                    size: 20,
                   ),
-                  title: const Text('PIN Protection'),
+                  title: const Text('PIN Protection', style: TextStyle(fontSize: 13)),
                   subtitle: const Text(
                     'Authorized configuration PIN is enabled',
+                    style: TextStyle(fontSize: 11),
                   ),
                   trailing: const StatusBadge(
                     label: 'Enabled',
@@ -267,15 +279,18 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  dense: true,
                   leading: Icon(
                     Icons.fingerprint_rounded,
                     color: AppDesign.primaryEmerald,
+                    size: 20,
                   ),
-                  title: const Text('Biometric Hardware'),
+                  title: const Text('Biometric Hardware', style: TextStyle(fontSize: 13)),
                   subtitle: Text(
                     _biometricsSupported
                         ? 'Supported on this device'
                         : 'Unsupported on this device',
+                    style: const TextStyle(fontSize: 11),
                   ),
                   trailing: StatusBadge(
                     label: _biometricsSupported ? 'Ready' : 'Not Found',
@@ -286,48 +301,65 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  dense: true,
                   leading: Icon(
                     Icons.history_toggle_off_rounded,
                     color: AppDesign.primaryTeal,
+                    size: 20,
                   ),
-                  title: const Text('Last Session Auth'),
-                  subtitle: Text('Last active: $_lastAuthTime'),
+                  title: const Text('Last Session Auth', style: TextStyle(fontSize: 13)),
+                  subtitle: Text('Last active: $_lastAuthTime', style: const TextStyle(fontSize: 11)),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: AppDesign.space24),
-          const SectionHeader(title: 'Authorization Controls'),
-          const SizedBox(height: AppDesign.space12),
-
+          const SizedBox(height: 8),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: Text(
+              'AUTHORIZATION CONTROLS',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+                color: Colors.grey,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
           Card(
-            margin: EdgeInsets.zero,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             child: Column(
               children: [
                 ListTile(
+                  dense: true,
                   leading: Icon(
                     Icons.password_rounded,
                     color: AppDesign.primaryEmerald,
+                    size: 20,
                   ),
-                  title: const Text('Change Security PIN'),
+                  title: const Text('Change Security PIN', style: TextStyle(fontSize: 13)),
                   subtitle: const Text(
                     'Update your local security authorization PIN',
+                    style: TextStyle(fontSize: 11),
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                   onTap: _showChangePinDialog,
                 ),
                 if (_biometricsSupported || _isFingerprint) ...[
                   const Divider(height: 1),
                   SwitchListTile(
+                    dense: true,
                     secondary: Icon(
                       Icons.fingerprint_rounded,
                       color: AppDesign.primaryEmerald,
+                      size: 20,
                     ),
                     activeColor: AppDesign.primaryEmerald,
-                    title: const Text('Fingerprint Unlock'),
+                    title: const Text('Fingerprint Unlock', style: TextStyle(fontSize: 13)),
                     subtitle: const Text(
                       'Unlock using registered device biometrics',
+                      style: TextStyle(fontSize: 11),
                     ),
                     value: _fingerprintEnabled,
                     onChanged: _toggleFingerprint,
@@ -337,32 +369,41 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             ),
           ),
 
-          const SizedBox(height: AppDesign.space24),
-          const SectionHeader(title: 'Auto-Lock Preferences'),
-          const SizedBox(height: AppDesign.space12),
-
+          const SizedBox(height: 8),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: Text(
+              'AUTO-LOCK PREFERENCES',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+                color: Colors.grey,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
           Card(
-            margin: EdgeInsets.zero,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             child: Padding(
-              padding: const EdgeInsets.all(AppDesign.space16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
                     'Auto-Lock Timeout',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     'How long the app should remain unlocked in the background',
                     style: TextStyle(
                       color: isDark
                           ? Colors.grey.shade400
                           : Colors.grey.shade600,
-                      fontSize: 11,
+                      fontSize: 10,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
                     value: _sessionTimeout,
                     decoration: InputDecoration(
@@ -381,17 +422,20 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                     items: const [
                       DropdownMenuItem(
                         value: 0,
-                        child: Text('Lock Immediately'),
+                        child: Text('Lock Immediately', style: TextStyle(fontSize: 13)),
                       ),
                       DropdownMenuItem(
                         value: 60,
-                        child: Text('Lock after 1 Minute'),
+                        child: Text('Lock after 1 Minute', style: TextStyle(fontSize: 13)),
                       ),
                       DropdownMenuItem(
                         value: 300,
-                        child: Text('Lock after 5 Minutes'),
+                        child: Text('Lock after 5 Minutes', style: TextStyle(fontSize: 13)),
                       ),
-                      DropdownMenuItem(value: -1, child: Text('Never Lock')),
+                      DropdownMenuItem(
+                        value: -1,
+                        child: Text('Never Lock', style: TextStyle(fontSize: 13)),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) _changeSessionTimeout(val);
