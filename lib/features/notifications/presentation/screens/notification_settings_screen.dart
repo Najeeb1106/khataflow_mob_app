@@ -25,13 +25,13 @@ class NotificationSettingsScreen extends ConsumerWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          vertical: AppDesign.space16,
-          horizontal: AppDesign.space16,
+          vertical: 8,
+          horizontal: 8,
         ),
         children: [
           // Info description card
           Container(
-            padding: const EdgeInsets.all(AppDesign.space16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: isDark ? AppDesign.darkCard : Colors.white,
               borderRadius: AppDesign.borderMedium,
@@ -45,7 +45,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                 Icon(
                   Icons.info_outline_rounded,
                   color: AppDesign.primaryEmerald,
-                  size: 28,
+                  size: 20,
                 ),
                 const SizedBox(width: AppDesign.space12),
                 Expanded(
@@ -53,7 +53,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                     'Configure when and how you want to be notified about due repayments, daily ledger summaries, and overdue notices.',
                     style: TextStyle(
                       color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
-                      fontSize: 14,
+                      fontSize: 13,
                       height: 1.3,
                     ),
                   ),
@@ -61,11 +61,11 @@ class NotificationSettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppDesign.space20),
+          const SizedBox(height: 8),
 
           // Global Notification Switch Card
           Card(
-            margin: EdgeInsets.zero,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             color: isDark ? AppDesign.darkCard : Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: AppDesign.borderMedium,
@@ -75,6 +75,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
             ),
             elevation: 0,
             child: SwitchListTile(
+              dense: true,
               secondary: Icon(
                 settings.notificationsEnabled
                     ? Icons.notifications_active_rounded
@@ -82,18 +83,20 @@ class NotificationSettingsScreen extends ConsumerWidget {
                 color: settings.notificationsEnabled
                     ? AppDesign.primaryEmerald
                     : AppDesign.grayNeutral,
+                size: 20,
               ),
               title: const Text(
                 'Allow Notifications',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 14,
                 ),
               ),
               subtitle: Text(
                 settings.notificationsEnabled
                     ? 'Receive alerts on this device'
                     : 'All notifications are disabled',
+                style: const TextStyle(fontSize: 11),
               ),
               activeColor: AppDesign.primaryEmerald,
               value: settings.notificationsEnabled,
@@ -110,17 +113,17 @@ class NotificationSettingsScreen extends ConsumerWidget {
               },
             ),
           ),
-          const SizedBox(height: AppDesign.space20),
+          const SizedBox(height: 8),
 
           // Granular Settings Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppDesign.space4, vertical: AppDesign.space8),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: Text(
               'NOTIFICATION PROFILES',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                fontSize: 10,
+                color: Colors.grey,
                 letterSpacing: 1,
               ),
             ),
@@ -133,7 +136,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
             child: AbsorbPointer(
               absorbing: !settings.notificationsEnabled,
               child: Card(
-                margin: EdgeInsets.zero,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
                 color: isDark ? AppDesign.darkCard : Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: AppDesign.borderMedium,
@@ -200,7 +203,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: AppDesign.space32),
+          const SizedBox(height: 16),
 
           // Security and Privacy note at the bottom
           Center(
@@ -209,14 +212,14 @@ class NotificationSettingsScreen extends ConsumerWidget {
               children: [
                 Icon(
                   Icons.lock_outline_rounded,
-                  size: 14,
+                  size: 12,
                   color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
                 ),
                 const SizedBox(width: AppDesign.space4),
                 Text(
                   'All settings are stored offline on your device',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
                     fontWeight: FontWeight.w500,
                   ),
@@ -238,20 +241,22 @@ class NotificationSettingsScreen extends ConsumerWidget {
     required ValueChanged<bool> onChanged,
   }) {
     return SwitchListTile(
+      dense: true,
       secondary: Icon(
         icon,
         color: value ? AppDesign.primaryEmerald : AppDesign.grayNeutral,
+        size: 20,
       ),
       title: Text(
         title,
         style: const TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 15,
+          fontSize: 13,
         ),
       ),
       subtitle: Text(
         description,
-        style: const TextStyle(fontSize: 12),
+        style: const TextStyle(fontSize: 11),
       ),
       activeColor: AppDesign.primaryEmerald,
       value: value,
