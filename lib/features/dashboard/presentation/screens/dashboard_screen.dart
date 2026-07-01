@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/dashboard_providers.dart';
-import '../../../../core/presentation/widgets/offline_banner.dart';
 import 'package:khata_app/features/settings/presentation/providers/settings_providers.dart';
 import '../../../../core/services/security_service.dart';
 import '../../../transactions/data/models/transaction.dart';
@@ -131,8 +130,7 @@ class DashboardScreen extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
       ),
-      body: OfflineBanner(
-        child: RefreshIndicator(
+      body: RefreshIndicator(
           color: AppDesign.primaryEmerald,
           onRefresh: () async {
             ref.invalidate(dashboardSummaryProvider);
@@ -904,7 +902,6 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ),
         ),
-      ),
     );
   }
 

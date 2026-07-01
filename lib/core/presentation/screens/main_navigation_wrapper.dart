@@ -43,6 +43,9 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
         selectedItemColor: Colors.teal,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
+        iconSize: 20,
+        selectedFontSize: 11,
+        unselectedFontSize: 10,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),
