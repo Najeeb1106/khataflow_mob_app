@@ -90,7 +90,7 @@ class NotificationsScreen extends ConsumerWidget {
             }
 
             return ListView.builder(
-              padding: const EdgeInsets.all(AppDesign.space16),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               itemCount: allNotifications.length,
               itemBuilder: (context, index) {
                 final item = allNotifications[index];
@@ -106,7 +106,7 @@ class NotificationsScreen extends ConsumerWidget {
                 final actionText = isOwed ? 'collect from' : 'pay to';
 
                 return Card(
-                  margin: const EdgeInsets.only(bottom: AppDesign.space12),
+                  margin: const EdgeInsets.only(bottom: 8),
                   color: isDark ? AppDesign.darkCard : Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: AppDesign.borderMedium,
@@ -115,17 +115,18 @@ class NotificationsScreen extends ConsumerWidget {
                     ),
                   ),
                   child: ListTile(
+                    dense: true,
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppDesign.space16,
-                      vertical: AppDesign.space8,
+                      horizontal: 12,
+                      vertical: 4,
                     ),
                     leading: Container(
-                      padding: const EdgeInsets.all(AppDesign.space8),
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: color.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(icon, color: color, size: 24),
+                      child: Icon(icon, color: color, size: 18),
                     ),
                     title: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -135,20 +136,20 @@ class NotificationsScreen extends ConsumerWidget {
                           style: TextStyle(
                             color: color,
                             fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                            fontSize: 11,
                           ),
                         ),
                         Text(
                           'PKR ${tx.amount.toStringAsFixed(0)}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                            fontSize: 13,
                           ),
                         ),
                       ],
                     ),
                     subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
+                      padding: const EdgeInsets.only(top: 2.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -156,16 +157,16 @@ class NotificationsScreen extends ConsumerWidget {
                             'Please remember to $actionText $personName ($khataTitle). $message',
                             style: TextStyle(
                               color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
-                              fontSize: 13,
+                              fontSize: 12,
                               height: 1.3,
                             ),
                           ),
                           if (tx.notes != null && tx.notes!.isNotEmpty) ...[
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Text(
                               'Notes: "${tx.notes}"',
                               style: const TextStyle(
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontStyle: FontStyle.italic,
                                 color: Colors.grey,
                               ),
