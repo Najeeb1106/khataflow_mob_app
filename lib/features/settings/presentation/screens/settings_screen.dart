@@ -338,8 +338,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(
-          vertical: AppDesign.space16,
-          horizontal: AppDesign.space8,
+          vertical: 8,
+          horizontal: 8,
         ),
         child: Column(
           children: [
@@ -350,10 +350,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 final userName = snapshot.data ?? 'Offline User';
                 return Container(
                   margin: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
+                    horizontal: 4,
+                    vertical: 4,
                   ),
-                  padding: const EdgeInsets.all(AppDesign.space12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: isDark ? AppDesign.darkCard : Colors.white,
                     borderRadius: AppDesign.borderMedium,
@@ -364,18 +364,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
                   child: ListTile(
+                    dense: true,
                     contentPadding: EdgeInsets.zero,
                     leading: CircleAvatar(
                       backgroundColor: AppDesign.primaryEmerald.withValues(
                         alpha: 0.1,
                       ),
                       foregroundColor: AppDesign.primaryEmerald,
-                      radius: 28,
+                      radius: 20,
                       child: Text(
                         userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 22,
+                          fontSize: 16,
                         ),
                       ),
                     ),
@@ -383,7 +384,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       userName,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: 14,
                       ),
                     ),
                     subtitle: Text(
@@ -392,13 +393,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         color: isDark
                             ? Colors.grey.shade400
                             : Colors.grey.shade600,
-                        fontSize: 12,
+                        fontSize: 11,
                       ),
                     ),
                     trailing: IconButton(
                       icon: Icon(
                         Icons.edit_rounded,
                         color: AppDesign.primaryEmerald,
+                        size: 18,
                       ),
                       onPressed: () => _editProfileName(userName),
                     ),
@@ -407,149 +409,178 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
 
-            const SizedBox(height: AppDesign.space12),
+            const SizedBox(height: 6),
 
             // Section: General Settings
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'GENERAL',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: Colors.grey,
-                  letterSpacing: 1,
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'GENERAL',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                    color: Colors.grey,
+                    letterSpacing: 1,
+                  ),
                 ),
               ),
             ),
             Card(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
               child: Column(
                 children: [
                   ListTile(
+                    dense: true,
                     leading: Icon(
                       Icons.security_rounded,
                       color: AppDesign.primaryEmerald,
+                      size: 20,
                     ),
-                    title: const Text('Security & App Lock'),
+                    title: const Text('Security & App Lock', style: TextStyle(fontSize: 13)),
                     subtitle: const Text(
                       'PIN, Biometrics and Session parameters',
+                      style: TextStyle(fontSize: 11),
                     ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                     onTap: () => context.push('/settings/security'),
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    dense: true,
                     leading: Icon(
                       Icons.notifications_none_rounded,
                       color: AppDesign.primaryEmerald,
+                      size: 20,
                     ),
-                    title: const Text('Notification Reminders'),
+                    title: const Text('Notification Reminders', style: TextStyle(fontSize: 13)),
                     subtitle: Text(
                       settings.notificationsEnabled ? 'Enabled' : 'Disabled',
+                      style: const TextStyle(fontSize: 11),
                     ),
-                    trailing: Switch(
-                      value: settings.notificationsEnabled,
-                      onChanged: (val) {
-                        ref
-                            .read(settingsProvider.notifier)
-                            .updateNotificationsEnabled(val);
-                      },
-                      activeColor: AppDesign.primaryEmerald,
+                    trailing: Transform.scale(
+                      scale: 0.8,
+                      child: Switch(
+                        value: settings.notificationsEnabled,
+                        onChanged: (val) {
+                          ref
+                              .read(settingsProvider.notifier)
+                              .updateNotificationsEnabled(val);
+                        },
+                        activeColor: AppDesign.primaryEmerald,
+                      ),
                     ),
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    dense: true,
                     leading: Icon(
                       Icons.attach_money_rounded,
                       color: AppDesign.primaryEmerald,
+                      size: 20,
                     ),
-                    title: const Text('Currency Symbol'),
+                    title: const Text('Currency Symbol', style: TextStyle(fontSize: 13)),
                     subtitle: Text(
                       'Set default: ${_getCurrencyName(settings.currencySymbol)}',
+                      style: const TextStyle(fontSize: 11),
                     ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                     onTap: () =>
                         _selectCurrency(context, ref, settings.currencySymbol),
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    dense: true,
                     leading: Icon(
                       Icons.color_lens_outlined,
                       color: AppDesign.primaryEmerald,
+                      size: 20,
                     ),
-                    title: const Text('Theme Mode'),
-                    subtitle: Text(_getThemeName(settings.themeMode)),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    title: const Text('Theme Mode', style: TextStyle(fontSize: 13)),
+                    subtitle: Text(_getThemeName(settings.themeMode), style: const TextStyle(fontSize: 11)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                     onTap: () => _selectTheme(context, ref, settings.themeMode),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: AppDesign.space16),
+            const SizedBox(height: 6),
 
             // Section: Data & Backup
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'DATA & BACKUP',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: Colors.grey,
-                  letterSpacing: 1,
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'DATA & BACKUP',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                    color: Colors.grey,
+                    letterSpacing: 1,
+                  ),
                 ),
               ),
             ),
             Card(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
               child: Column(
                 children: [
                   ListTile(
+                    dense: true,
                     leading: Icon(
                       Icons.delete_sweep_rounded,
                       color: AppDesign.primaryEmerald,
+                      size: 20,
                     ),
-                    title: const Text('Trash / Recycle Bin'),
+                    title: const Text('Trash / Recycle Bin', style: TextStyle(fontSize: 13)),
                     subtitle: const Text(
                       'Recover deleted contacts or transactions',
+                      style: TextStyle(fontSize: 11),
                     ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                     onTap: () => context.push('/trash'),
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    dense: true,
                     leading: Icon(
                       Icons.cloud_upload_rounded,
                       color: AppDesign.primaryEmerald,
+                      size: 20,
                     ),
-                    title: const Text('Backup Database'),
-                    subtitle: const Text('Export local ledger copy securely'),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    title: const Text('Backup Database', style: TextStyle(fontSize: 13)),
+                    subtitle: const Text('Export local ledger copy securely', style: TextStyle(fontSize: 11)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                     onTap: _triggerSimulatedBackup,
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    dense: true,
                     leading: Icon(
                       Icons.cloud_download_rounded,
                       color: AppDesign.primaryEmerald,
+                      size: 20,
                     ),
-                    title: const Text('Restore Database'),
-                    subtitle: const Text('Import database from local files'),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    title: const Text('Restore Database', style: TextStyle(fontSize: 13)),
+                    subtitle: const Text('Import database from local files', style: TextStyle(fontSize: 11)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                     onTap: _triggerSimulatedRestore,
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    dense: true,
                     leading: Icon(
                       Icons.storage_rounded,
                       color: AppDesign.primaryTeal,
+                      size: 20,
                     ),
-                    title: const Text('Storage Usage'),
-                    subtitle: Text('Database File Size: $_dbSize'),
+                    title: const Text('Storage Usage', style: TextStyle(fontSize: 13)),
+                    subtitle: Text('Database File Size: $_dbSize', style: const TextStyle(fontSize: 11)),
                     trailing: IconButton(
-                      icon: const Icon(Icons.refresh, size: 16),
+                      icon: const Icon(Icons.refresh, size: 14),
                       onPressed: _calculateDbSize,
                     ),
                   ),
@@ -557,31 +588,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
 
-            const SizedBox(height: AppDesign.space16),
+            const SizedBox(height: 6),
 
             // Section: About & Support
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'SUPPORT & LEGAL',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: Colors.grey,
-                  letterSpacing: 1,
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'SUPPORT & LEGAL',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                    color: Colors.grey,
+                    letterSpacing: 1,
+                  ),
                 ),
               ),
             ),
             Card(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
               child: Column(
                 children: [
                   ListTile(
+                    dense: true,
                     leading: Icon(
                       Icons.privacy_tip_outlined,
                       color: AppDesign.primaryEmerald,
+                      size: 20,
                     ),
-                    title: const Text('Privacy Policy'),
+                    title: const Text('Privacy Policy', style: TextStyle(fontSize: 13)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                     onTap: () {
                       showDialog(
                         context: context,
@@ -607,65 +644,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    dense: true,
                     leading: Icon(
                       Icons.info_outline_rounded,
                       color: AppDesign.primaryEmerald,
+                      size: 20,
                     ),
-                    title: const Text('App Version'),
-                    subtitle: const Text('Version 1.1.1 (Build 12)'),
+                    title: const Text('App Version', style: TextStyle(fontSize: 13)),
+                    subtitle: const Text('Version 1.1.1 (Build 12)', style: TextStyle(fontSize: 11)),
                     onTap: null,
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: AppDesign.space20),
+            const SizedBox(height: 6),
 
             // Danger zone
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'DANGER ZONE',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: AppDesign.redPayable,
-                  letterSpacing: 1,
-                ),
-              ),
-            ),
             Card(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
               color: AppDesign.redPayable.withValues(alpha: 0.03),
               shape: RoundedRectangleBorder(
                 borderRadius: AppDesign.borderMedium,
                 side: const BorderSide(color: AppDesign.redPayable, width: 0.8),
               ),
               child: ListTile(
+                dense: true,
                 leading: const Icon(
                   Icons.delete_forever_rounded,
                   color: AppDesign.redPayable,
+                  size: 20,
                 ),
                 title: const Text(
                   'Clear All Local Data',
                   style: TextStyle(
                     color: AppDesign.redPayable,
                     fontWeight: FontWeight.bold,
+                    fontSize: 13,
                   ),
                 ),
-                subtitle: const Text('Permanently wipe Isar database cache'),
+                subtitle: const Text('Permanently wipe Isar database cache', style: TextStyle(fontSize: 11)),
                 onTap: () => _clearAllData(context, ref),
               ),
             ),
 
-            const SizedBox(height: AppDesign.space32),
+            const SizedBox(height: 12),
 
             // Developer signature
             const Text(
               'KhataFlow v1.0.0 (Codrix.dev)',
               style: TextStyle(
                 color: Colors.grey,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
