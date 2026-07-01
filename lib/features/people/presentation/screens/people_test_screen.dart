@@ -61,14 +61,18 @@ class _PeopleTestScreenState extends ConsumerState<PeopleTestScreen> {
               final person = Person()
                 ..uuid = const Uuid().v4()
                 ..name = _nameController.text.trim()
-                ..phone = _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim()
-                ..notes = _notesController.text.trim().isEmpty ? null : _notesController.text.trim()
+                ..phone = _phoneController.text.trim().isEmpty
+                    ? null
+                    : _phoneController.text.trim()
+                ..notes = _notesController.text.trim().isEmpty
+                    ? null
+                    : _notesController.text.trim()
                 ..createdAt = DateTime.now()
                 ..updatedAt = DateTime.now()
                 ..isDeleted = false;
 
               ref.read(peopleListProvider.notifier).addPerson(person);
-              
+
               _nameController.clear();
               _phoneController.clear();
               _notesController.clear();
@@ -98,7 +102,11 @@ class _PeopleTestScreenState extends ConsumerState<PeopleTestScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                  const Icon(
+                    Icons.people_outline,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'No people added yet!',
@@ -124,16 +132,24 @@ class _PeopleTestScreenState extends ConsumerState<PeopleTestScreen> {
                 child: ExpansionTile(
                   title: Text(
                     person.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                   subtitle: Text(person.phone ?? 'No phone'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                        ),
                         onPressed: () {
-                          ref.read(peopleListProvider.notifier).deletePerson(person.uuid);
+                          ref
+                              .read(peopleListProvider.notifier)
+                              .deletePerson(person.uuid);
                         },
                       ),
                       const Icon(Icons.keyboard_arrow_down),
@@ -141,7 +157,10 @@ class _PeopleTestScreenState extends ConsumerState<PeopleTestScreen> {
                   ),
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -185,7 +204,9 @@ class _KhataSection extends ConsumerWidget {
         title: const Text('Add New Khata'),
         content: TextField(
           controller: titleController,
-          decoration: const InputDecoration(labelText: 'Khata Title (e.g. Personal)'),
+          decoration: const InputDecoration(
+            labelText: 'Khata Title (e.g. Personal)',
+          ),
         ),
         actions: [
           TextButton(
@@ -203,7 +224,9 @@ class _KhataSection extends ConsumerWidget {
                 ..updatedAt = DateTime.now()
                 ..isDeleted = false;
 
-              ref.read(khatasForPersonProvider(personUuid).notifier).addKhata(khata);
+              ref
+                  .read(khatasForPersonProvider(personUuid).notifier)
+                  .addKhata(khata);
               Navigator.pop(context);
             },
             child: const Text('Save'),
@@ -239,7 +262,10 @@ class _KhataSection extends ConsumerWidget {
             if (khatas.isEmpty) {
               return const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Text('No khatas under this person', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                child: Text(
+                  'No khatas under this person',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
               );
             }
             return Column(
@@ -248,18 +274,33 @@ class _KhataSection extends ConsumerWidget {
                   color: Colors.grey[100],
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ExpansionTile(
-                    title: Text(khata.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    title: Text(
+                      khata.title,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete, size: 18, color: Colors.redAccent),
+                      icon: const Icon(
+                        Icons.delete,
+                        size: 18,
+                        color: Colors.redAccent,
+                      ),
                       onPressed: () {
-                        ref.read(khatasForPersonProvider(personUuid).notifier).deleteKhata(khata.uuid);
+                        ref
+                            .read(khatasForPersonProvider(personUuid).notifier)
+                            .deleteKhata(khata.uuid);
                       },
                     ),
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0,
+                          vertical: 6.0,
+                        ),
                         child: _TransactionSection(khataUuid: khata.uuid),
-                      )
+                      ),
                     ],
                   ),
                 );
@@ -313,7 +354,9 @@ class _TransactionSection extends ConsumerWidget {
               ),
               TextField(
                 controller: notesController,
-                decoration: const InputDecoration(labelText: 'Notes (Optional)'),
+                decoration: const InputDecoration(
+                  labelText: 'Notes (Optional)',
+                ),
               ),
             ],
           ),
@@ -332,12 +375,16 @@ class _TransactionSection extends ConsumerWidget {
                   ..khataUuid = khataUuid
                   ..type = selectedType
                   ..amount = amount
-                  ..notes = notesController.text.trim().isEmpty ? null : notesController.text.trim()
+                  ..notes = notesController.text.trim().isEmpty
+                      ? null
+                      : notesController.text.trim()
                   ..createdAt = DateTime.now()
                   ..updatedAt = DateTime.now()
                   ..isDeleted = false;
 
-                ref.read(transactionsForKhataProvider(khataUuid).notifier).addTransaction(tx);
+                ref
+                    .read(transactionsForKhataProvider(khataUuid).notifier)
+                    .addTransaction(tx);
                 Navigator.pop(context);
               },
               child: const Text('Save'),
@@ -350,7 +397,9 @@ class _TransactionSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final transactionsState = ref.watch(transactionsForKhataProvider(khataUuid));
+    final transactionsState = ref.watch(
+      transactionsForKhataProvider(khataUuid),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,7 +407,10 @@ class _TransactionSection extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Transactions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            const Text(
+              'Transactions',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
             TextButton.icon(
               onPressed: () => _showAddTransactionDialog(context, ref),
               icon: const Icon(Icons.add_circle_outline, size: 14),
@@ -371,12 +423,17 @@ class _TransactionSection extends ConsumerWidget {
             if (transactions.isEmpty) {
               return const Padding(
                 padding: EdgeInsets.symmetric(vertical: 4.0),
-                child: Text('No transactions', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                child: Text(
+                  'No transactions',
+                  style: TextStyle(color: Colors.grey, fontSize: 11),
+                ),
               );
             }
             return Column(
               children: transactions.map((tx) {
-                final color = (tx.type == TransactionType.gave || tx.type == TransactionType.paid)
+                final color =
+                    (tx.type == TransactionType.gave ||
+                        tx.type == TransactionType.paid)
                     ? Colors.green[700]
                     : Colors.red[700];
                 return ListTile(

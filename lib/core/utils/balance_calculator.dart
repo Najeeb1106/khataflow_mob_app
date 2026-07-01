@@ -74,9 +74,77 @@ class BalanceCalculator {
     return balance.abs().toStringAsFixed(0);
   }
 
-  /// Formats a full amount string for display with specified currency.
-  /// e.g. "Rs. 5,000"
   static String formatPkr(double amount, [String currency = 'Rs.']) {
-    return '$currency ${amount.abs().toStringAsFixed(0)}';
+    final value = amount.abs().toStringAsFixed(0);
+    if (value.length <= 3) {
+      return '$currency $value';
+    }
+    final lastThree = value.substring(value.length - 3);
+    final rest = value.substring(0, value.length - 3);
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = rest.length - 1; i >= 0; i--) {
+      buffer.write(rest[i]);
+      count++;
+      if (count == 2 && i > 0) {
+        buffer.write(',');
+        count = 0;
+      }
+    }
+    final restFormatted = buffer.toString().split('').reversed.join('');
+    final sign = amount < 0 ? '-' : '';
+    return '$sign$currency $restFormatted,$lastThree';
+  }
+
+  /// Calculates the due status of a transaction.
+  static String getDueStatus(Transaction tx) {
+    if (tx.type == TransactionType.received ||
+        tx.type == TransactionType.paid) {
+      return '✅ Settled';
+    }
+    if (tx.dueDate == null) return '';
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final due = DateTime(tx.dueDate!.year, tx.dueDate!.month, tx.dueDate!.day);
+
+    if (due.isBefore(today)) {
+      final diff = today.difference(due).inDays;
+      return '⚠️ Overdue by $diff day${diff > 1 ? "s" : ""}';
+    } else if (due.isAtSameMomentAs(today)) {
+      return '🟡 Due Today';
+    } else if (due.isAtSameMomentAs(today.add(const Duration(days: 1)))) {
+      return '🔔 Due Tomorrow';
+    }
+    return '';
+  }
+
+  /// Returns the details for a priority status badge.
+  static Map<String, dynamic> getDueBadgeDetails(Transaction tx) {
+    if (tx.type == TransactionType.received ||
+        tx.type == TransactionType.paid) {
+      return {'label': '✅ Settled', 'color': 'green'};
+    }
+    if (tx.dueDate == null) {
+      return {'label': '⚪ No Due Date', 'color': 'grey'};
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final due = DateTime(tx.dueDate!.year, tx.dueDate!.month, tx.dueDate!.day);
+
+    if (due.isBefore(today)) {
+      final diff = today.difference(due).inDays;
+      return {
+        'label': '🔴 Overdue by $diff day${diff > 1 ? "s" : ""}',
+        'color': 'red',
+      };
+    } else if (due.isAtSameMomentAs(today)) {
+      return {'label': '🟡 Due Today', 'color': 'orange'};
+    } else if (due.isAtSameMomentAs(today.add(const Duration(days: 1)))) {
+      return {'label': '🟢 Due Tomorrow', 'color': 'green'};
+    } else {
+      return {'label': '🔵 Upcoming', 'color': 'blue'};
+    }
   }
 }

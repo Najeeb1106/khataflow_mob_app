@@ -15,17 +15,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<Map<String, String>> _slides = [
     {
       'title': 'No More Paper Ledgers',
-      'description': 'Replace old notebooks and memory lists. Track all lent and borrowed amounts in one secure offline place.',
+      'description':
+          'Replace old notebooks and memory lists. Track all lent and borrowed amounts in one secure offline place.',
       'icon': '📓',
     },
     {
       'title': 'Intelligent Reminders',
-      'description': 'Never forget a payment again. Get automated alerts for custom due dates and repayment timelines.',
+      'description':
+          'Never forget a payment again. Get automated alerts for custom due dates and repayment timelines.',
       'icon': '⏰',
     },
     {
       'title': 'Instant Statements & Share',
-      'description': 'Generate professional PDF summaries and share them instantly with contacts via WhatsApp.',
+      'description':
+          'Generate professional PDF summaries and share them instantly with contacts via WhatsApp.',
       'icon': '📊',
     },
   ];
@@ -42,7 +45,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 alignment: Alignment.topRight,
                 child: TextButton(
                   onPressed: () => context.go('/setup-profile'),
-                  child: const Text('Skip', style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Skip',
+                    style: TextStyle(
+                      color: Colors.teal,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
               Expanded(
@@ -97,7 +106,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     width: _currentPage == index ? 24 : 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: _currentPage == index ? Colors.teal : Colors.grey[300],
+                      color: _currentPage == index
+                          ? Colors.teal
+                          : Colors.grey[300],
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -111,7 +122,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     elevation: 2,
                   ),
                   onPressed: () {
@@ -126,7 +139,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                   child: Text(
                     _currentPage == _slides.length - 1 ? 'Get Started' : 'Next',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

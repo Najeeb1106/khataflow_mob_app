@@ -23,7 +23,7 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   bool _isLoading = false;
   Khata? _existingKhata;
 
@@ -64,9 +64,13 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
       ..isDeleted = false;
 
     khata.title = _titleController.text.trim();
-    khata.notes = _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
+    khata.notes = _notesController.text.trim().isEmpty
+        ? null
+        : _notesController.text.trim();
 
-    final notifier = ref.read(khatasForPersonProvider(widget.personUuid).notifier);
+    final notifier = ref.read(
+      khatasForPersonProvider(widget.personUuid).notifier,
+    );
     if (_existingKhata == null) {
       await notifier.addKhata(khata);
     } else {
@@ -96,7 +100,7 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
           IconButton(
             icon: const Icon(Icons.check, color: Colors.teal),
             onPressed: _save,
-          )
+          ),
         ],
       ),
       body: Form(
@@ -109,7 +113,9 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
               decoration: InputDecoration(
                 labelText: 'Khata Title (e.g. Shop Items, Personal Loan) *',
                 prefixIcon: const Icon(Icons.account_balance_wallet),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               validator: (val) {
                 if (val == null || val.trim().isEmpty) {
@@ -125,7 +131,9 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
               decoration: InputDecoration(
                 labelText: 'Notes (Optional)',
                 prefixIcon: const Icon(Icons.notes),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 40),
@@ -135,10 +143,15 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onPressed: _save,
-                child: const Text('Save Khata', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Save Khata',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],

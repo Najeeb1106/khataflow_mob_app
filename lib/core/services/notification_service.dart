@@ -6,7 +6,8 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
   Future<void> initialize() async {
@@ -20,7 +21,10 @@ class NotificationService {
       requestSoundPermission: false,
     );
 
-    const initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
+    const initSettings = InitializationSettings(
+      android: androidInit,
+      iOS: iosInit,
+    );
 
     await _localNotifications.initialize(
       initSettings,
@@ -40,7 +44,9 @@ class NotificationService {
     try {
       // Local Notification permission for Android 13+
       await _localNotifications
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.requestNotificationsPermission();
     } catch (e) {
       debugPrint("Notification permissions request skipped: $e");
@@ -56,14 +62,18 @@ class NotificationService {
     const androidDetails = AndroidNotificationDetails(
       'khataflow_main_channel',
       'KhataFlow Alerts',
-      channelDescription: 'Main notification channel for due dates and credit updates',
+      channelDescription:
+          'Main notification channel for due dates and credit updates',
       importance: Importance.max,
       priority: Priority.high,
     );
 
     const iosDetails = DarwinNotificationDetails();
 
-    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
 
     await _localNotifications.show(id, title, body, details, payload: payload);
   }
@@ -84,7 +94,7 @@ class NotificationService {
     Future.delayed(duration, () {
       showNotification(id: id, title: title, body: body, payload: payload);
     });
-    
+
     debugPrint("Notification scheduled in ${duration.inSeconds} seconds.");
   }
 }

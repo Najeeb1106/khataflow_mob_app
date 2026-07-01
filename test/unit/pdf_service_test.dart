@@ -14,7 +14,7 @@ void main() {
 
   setUp(() {
     pdfService = PdfService();
-    
+
     testPerson = Person()
       ..uuid = 'p-1'
       ..name = 'Zahid Khan'
@@ -53,15 +53,18 @@ void main() {
   });
 
   group('PdfService Unit Tests', () {
-    test('generateStatement successfully compiles PDF document bytes', () async {
-      final pdfBytes = await pdfService.generateStatement(
-        person: testPerson,
-        khata: testKhata,
-        transactions: [testTx1, testTx2],
-      );
+    test(
+      'generateStatement successfully compiles PDF document bytes',
+      () async {
+        final pdfBytes = await pdfService.generateStatement(
+          person: testPerson,
+          khata: testKhata,
+          transactions: [testTx1, testTx2],
+        );
 
-      expect(pdfBytes, isA<Uint8List>());
-      expect(pdfBytes.isNotEmpty, true);
-    });
+        expect(pdfBytes, isA<Uint8List>());
+        expect(pdfBytes.isNotEmpty, true);
+      },
+    );
   });
 }

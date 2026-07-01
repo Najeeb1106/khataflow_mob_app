@@ -11,8 +11,11 @@ import '../../../features/khata/presentation/screens/khata_detail_screen.dart';
 import '../../../features/transactions/presentation/screens/quick_add_transaction_screen.dart';
 import '../../../features/transactions/presentation/screens/advanced_transaction_screen.dart';
 import '../../../features/notifications/presentation/screens/notifications_screen.dart';
+import '../../../features/notifications/presentation/screens/notification_settings_screen.dart';
 import '../../../features/reports/presentation/screens/statement_preview_screen.dart';
 import '../../../features/trash/presentation/screens/trash_screen.dart';
+
+import '../../../features/dashboard/presentation/screens/global_search_screen.dart';
 
 final goRouter = GoRouter(
   initialLocation: '/unlock', // Check lock requirement at start
@@ -25,13 +28,14 @@ final goRouter = GoRouter(
       path: '/setup-profile',
       builder: (context, state) => const LocalAuthSetupScreen(),
     ),
-    GoRoute(
-      path: '/unlock',
-      builder: (context, state) => const UnlockScreen(),
-    ),
+    GoRoute(path: '/unlock', builder: (context, state) => const UnlockScreen()),
     GoRoute(
       path: '/dashboard',
       builder: (context, state) => const MainNavigationWrapper(initialTab: 0),
+    ),
+    GoRoute(
+      path: '/search',
+      builder: (context, state) => const GlobalSearchScreen(),
     ),
     GoRoute(
       path: '/people',
@@ -51,21 +55,18 @@ final goRouter = GoRouter(
     ),
     GoRoute(
       path: '/people/:uuid',
-      builder: (context, state) => PersonDetailScreen(
-        personUuid: state.pathParameters['uuid']!,
-      ),
+      builder: (context, state) =>
+          PersonDetailScreen(personUuid: state.pathParameters['uuid']!),
     ),
     GoRoute(
       path: '/people/:uuid/edit',
-      builder: (context, state) => AddEditPersonScreen(
-        personUuid: state.pathParameters['uuid'],
-      ),
+      builder: (context, state) =>
+          AddEditPersonScreen(personUuid: state.pathParameters['uuid']),
     ),
     GoRoute(
       path: '/people/:uuid/khata/add',
-      builder: (context, state) => AddEditKhataScreen(
-        personUuid: state.pathParameters['uuid']!,
-      ),
+      builder: (context, state) =>
+          AddEditKhataScreen(personUuid: state.pathParameters['uuid']!),
     ),
     GoRoute(
       path: '/people/:personUuid/khata/:khataUuid/edit',
@@ -76,9 +77,8 @@ final goRouter = GoRouter(
     ),
     GoRoute(
       path: '/khata/:uuid',
-      builder: (context, state) => KhataDetailScreen(
-        khataUuid: state.pathParameters['uuid']!,
-      ),
+      builder: (context, state) =>
+          KhataDetailScreen(khataUuid: state.pathParameters['uuid']!),
     ),
     GoRoute(
       path: '/transaction/quick-add',
@@ -88,6 +88,7 @@ final goRouter = GoRouter(
       path: '/transaction/advanced',
       builder: (context, state) => AdvancedTransactionScreen(
         khataUuid: state.uri.queryParameters['khataUuid'] ?? '',
+        presetType: state.uri.queryParameters['type'],
       ),
     ),
     GoRoute(
@@ -95,15 +96,15 @@ final goRouter = GoRouter(
       builder: (context, state) => const NotificationsScreen(),
     ),
     GoRoute(
-      path: '/statement/:khataUuid',
-      builder: (context, state) => StatementPreviewScreen(
-        khataUuid: state.pathParameters['khataUuid']!,
-      ),
+      path: '/notifications/settings',
+      builder: (context, state) => const NotificationSettingsScreen(),
     ),
     GoRoute(
-      path: '/trash',
-      builder: (context, state) => const TrashScreen(),
+      path: '/statement/:khataUuid',
+      builder: (context, state) =>
+          StatementPreviewScreen(khataUuid: state.pathParameters['khataUuid']!),
     ),
+    GoRoute(path: '/trash', builder: (context, state) => const TrashScreen()),
     GoRoute(
       path: '/settings/security',
       builder: (context, state) => const SecuritySettingsScreen(),

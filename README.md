@@ -1,8 +1,14 @@
-# KhataFlow
+# KhataFlow v1.2.0
 
-[![Platform Support](https://img.shields.io/badge/Platform-Android-007ACC?logo=android&logoColor=white)](#)
-[![Flutter SDK](https://img.shields.io/badge/Flutter-^3.35.0-02569B?logo=flutter&logoColor=white)](#)
+[![Flutter SDK](https://img.shields.io/badge/Flutter-^3.22.0-02569B?logo=flutter&logoColor=white)](#)
+[![Dart SDK](https://img.shields.io/badge/Dart-^3.4.0-0175C2?logo=dart&logoColor=white)](#)
+[![Storage](https://img.shields.io/badge/Storage-Offline%20First-green)](#)
+[![Database](https://img.shields.io/badge/Database-Isar%20NoSQL-orange)](#)
+[![UI](https://img.shields.io/badge/UI-Material%203-purple)](#)
+[![Export](https://img.shields.io/badge/Export-PDF-red)](#)
+[![Security](https://img.shields.io/badge/Security-Biometrics-blue)](#)
 [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+
 
 **KhataFlow** is a secure, offline-first personal ledger and expense bookkeeping manager built with Flutter. It helps individuals, freelancers, and small businesses track transactions, manage debts/credits, generate PDF statements, and set automated reminders—all without requiring an active internet connection.
 
@@ -12,9 +18,25 @@
 
 - **Biometric & PIN Lock Screen**: Fast, secure fingerprint and 4-digit PIN access powered by Android Keystore (SHA-256 salted hashes).
 - **Offline-First Storage**: Local database operations using high-performance [Isar](https://isar.dev/) queries optimized for speed and large datasets (>50,000 transactions).
-- **Statement Generation & Sharing**: Create professionally formatted PDF ledger statements with running balance logs, status cards, and direct sharing to WhatsApp.
+- **Statement Generation & Sharing**: Create professionally formatted PDF ledger statements with running balance logs, status cards, and direct sharing to WhatsApp. Includes total exports logs and history.
 - **Ledger Reminders & Notifications**: Local notification alerts for scheduled reviews and a daily summary review.
 - **Trash Bin Recovery**: Safe deletion framework supporting soft-deletes and automatic 30-day purge management.
+- **Interactive Analytics**: Premium dashboard plotting monthly cash flow ratios and net ledger position charts using `fl_chart`.
+
+---
+
+## 🏗️ Architecture Diagram
+
+```mermaid
+graph TD
+    A[GoRouter] --> B[UI Screens / Presentation]
+    B --> C[Riverpod Providers / State Notifiers]
+    C --> D[Repositories]
+    D --> E[Isar Local Database]
+    D --> F[Local Secure Storage]
+    C --> G[Local Notification Service]
+    C --> H[PDF Generation Service]
+```
 
 ---
 
@@ -26,12 +48,12 @@
 - **Local Notifications**: `flutter_local_notifications`
 - **PDF & Share**: `pdf`, `share_plus`, `url_launcher`
 - **Routing**: [GoRouter](https://pub.dev/packages/go_router)
+- **Charts**: `fl_chart`
+- **Fonts**: `google_fonts` (Inter)
 
 ---
 
-## 🏗️ Project Architecture
-
-KhataFlow follows a **feature-first** structure to separate concerns and scale modularly:
+## 📂 Project Architecture
 
 ```
 lib/
@@ -59,8 +81,8 @@ lib/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Flutter SDK**: `^3.35.0`
-- **Dart SDK**: `^3.9.0`
+- **Flutter SDK**: `^3.22.0`
+- **Dart SDK**: `^3.4.0`
 - **Java**: JDK 17
 - **Android Studio** or **VS Code** with Flutter extensions installed
 
@@ -90,11 +112,34 @@ lib/
 
 ---
 
-## 📘 Documentation Guides
+## 🗓️ Future Roadmap
 
-- For code generation, static analysis, and running unit tests locally, check the [Developer Build Guide](BUILD_GUIDE.md).
-- For signing configurations, Gradle linking, and compiling release APKs/App Bundles, check the [Production Deployment Guide](DEPLOYMENT_GUIDE.md).
-- To read the functional requirements and architectural specifications of the application, check the [Product Requirements Document (PRD)](KhataFlow_PRD.md).
+- [ ] Multi-currency conversion tools with offline rate cache.
+- [ ] Automated SMS/WhatsApp due alerts trigger templates.
+- [ ] Desktop release support (Windows / macOS).
+- [ ] Cloud sync backup via custom WebDAV or Google Drive API.
+
+---
+
+## 🤝 Contributing
+
+We welcome community contributions! Please read our [Contribution Guidelines](CONTRIBUTING.md) to learn how to open issues, submit pull requests, and maintain clean commit conventions.
+
+---
+
+## ⚠️ Known Limitations
+
+- Multi-device syncing is not natively supported since data is held 100% offline.
+- Face Unlock on certain low-end devices may fall back to PIN authentication due to Android biometrics level classifications.
+
+---
+
+## 📜 Version History
+
+- **v1.2.0** (Current): Final production-ready release with unified confirmation dialogs, cached search queries, haptic triggers, PDF export history tracking, and build metadata.
+- **v1.1.1**: Shimmer loaders, custom snackbars, settings metadata, dialogs, and widget tests alignment.
+- **v1.1.0**: Google Fonts (Inter) layout, Cash Flow analytics charts, timeline swipe actions, storage metrics, and advanced search.
+- **v1.0.0**: Initial Release (PIN authentication, Isar storage, PDF reports generator, notifications).
 
 ---
 

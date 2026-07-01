@@ -20,14 +20,11 @@ sealed class AppException implements Exception {
   /// The original exception/error that caused this, if any.
   final Object? cause;
 
-  const AppException(
-    this.message, {
-    this.code,
-    this.cause,
-  });
+  const AppException(this.message, {this.code, this.cause});
 
   @override
-  String toString() => 'AppException[$code]: $message${cause != null ? ' (caused by: $cause)' : ''}';
+  String toString() =>
+      'AppException[$code]: $message${cause != null ? ' (caused by: $cause)' : ''}';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

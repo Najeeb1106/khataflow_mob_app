@@ -4,7 +4,10 @@ import '../models/khata.dart';
 
 abstract class KhataRepository {
   Future<List<Khata>> getKhatas({bool includeDeleted = false});
-  Future<List<Khata>> getKhatasForPerson(String personUuid, {bool includeDeleted = false});
+  Future<List<Khata>> getKhatasForPerson(
+    String personUuid, {
+    bool includeDeleted = false,
+  });
   Future<Khata?> getKhata(String uuid);
   Future<void> saveKhata(Khata khata);
   Future<void> deleteKhata(String uuid);
@@ -24,11 +27,18 @@ class LocalKhataRepository implements KhataRepository {
   }
 
   @override
-  Future<List<Khata>> getKhatasForPerson(String personUuid, {bool includeDeleted = false}) async {
+  Future<List<Khata>> getKhatasForPerson(
+    String personUuid, {
+    bool includeDeleted = false,
+  }) async {
     if (includeDeleted) {
       return isar.khatas.filter().personUuidEqualTo(personUuid).findAll();
     } else {
-      return isar.khatas.filter().personUuidEqualTo(personUuid).isDeletedEqualTo(false).findAll();
+      return isar.khatas
+          .filter()
+          .personUuidEqualTo(personUuid)
+          .isDeletedEqualTo(false)
+          .findAll();
     }
   }
 

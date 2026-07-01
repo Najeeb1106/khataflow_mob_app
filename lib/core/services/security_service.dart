@@ -10,7 +10,7 @@ class SecurityService {
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
-  
+
   static final _localAuth = LocalAuthentication();
 
   // Keys
@@ -38,11 +38,23 @@ class SecurityService {
   }) async {
     final deviceId = await getDeviceId();
     await _storage.write(key: _keyProfileName, value: name);
-    await _storage.write(key: _keyHashedPin, value: hashPin(pin, salt: deviceId));
-    await _storage.write(key: _keyFingerprintEnabled, value: enableFingerprint.toString());
-    await _storage.write(key: _keyAppLockEnabled, value: 'true'); // enabled by default
-    await _storage.write(key: _keySessionTimeout, value: '60'); // default 1 minute (60s)
-    
+    await _storage.write(
+      key: _keyHashedPin,
+      value: hashPin(pin, salt: deviceId),
+    );
+    await _storage.write(
+      key: _keyFingerprintEnabled,
+      value: enableFingerprint.toString(),
+    );
+    await _storage.write(
+      key: _keyAppLockEnabled,
+      value: 'true',
+    ); // enabled by default
+    await _storage.write(
+      key: _keySessionTimeout,
+      value: '60',
+    ); // default 1 minute (60s)
+
     // Generate database key if not already generated
     await getDatabaseKey();
   }
@@ -60,7 +72,10 @@ class SecurityService {
     final isValid = await verifyPin(oldPin);
     if (!isValid) throw Exception('Invalid old PIN');
     final deviceId = await getDeviceId();
-    await _storage.write(key: _keyHashedPin, value: hashPin(newPin, salt: deviceId));
+    await _storage.write(
+      key: _keyHashedPin,
+      value: hashPin(newPin, salt: deviceId),
+    );
   }
 
   /// Checks if a profile has been created.
@@ -87,7 +102,10 @@ class SecurityService {
 
   /// Toggles fingerprint lock.
   static Future<void> setFingerprintEnabled(bool enabled) async {
-    await _storage.write(key: _keyFingerprintEnabled, value: enabled.toString());
+    await _storage.write(
+      key: _keyFingerprintEnabled,
+      value: enabled.toString(),
+    );
   }
 
   /// Checks if biometrics are enabled.
@@ -168,16 +186,20 @@ class SecurityService {
   static Future<Uint8List> getDatabaseKey() async {
     final storedKeyHex = await _storage.read(key: _keyDbEncryptionKey);
     if (storedKeyHex != null) {
-      return Uint8List.fromList(List<int>.generate(
-        64,
-        (i) => int.parse(storedKeyHex.substring(i * 2, i * 2 + 2), radix: 16),
-      ));
+      return Uint8List.fromList(
+        List<int>.generate(
+          64,
+          (i) => int.parse(storedKeyHex.substring(i * 2, i * 2 + 2), radix: 16),
+        ),
+      );
     }
 
     // Generate random 64-byte key
     final random = Random.secure();
     final keyBytes = List<int>.generate(64, (i) => random.nextInt(256));
-    final keyHex = keyBytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    final keyHex = keyBytes
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
 
     await _storage.write(key: _keyDbEncryptionKey, value: keyHex);
     return Uint8List.fromList(keyBytes);

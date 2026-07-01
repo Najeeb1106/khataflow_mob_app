@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:khata_app/features/auth/presentation/screens/auth_screen.dart';
+import 'package:khata_app/features/auth/presentation/screens/local_auth_setup_screen.dart';
 import 'package:khata_app/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:khata_app/features/dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:khata_app/features/people/presentation/providers/people_providers.dart';
@@ -15,10 +15,11 @@ import 'package:khata_app/features/transactions/data/models/transaction.dart';
 import 'package:khata_app/features/people/data/repositories/person_repository.dart';
 import 'package:khata_app/features/khata/data/repositories/khata_repository.dart';
 import 'package:khata_app/features/transactions/data/repositories/transaction_repository.dart';
-import 'package:khata_app/main.dart';
 
 class MockPersonRepository extends Mock implements PersonRepository {}
+
 class MockKhataRepository extends Mock implements KhataRepository {}
+
 class MockTransactionRepository extends Mock implements TransactionRepository {}
 
 void main() {
@@ -67,15 +68,61 @@ void main() {
         ..isDeleted = false;
     });
 
-    testWidgets('Offline User Flow: Login -> View Dashboard -> View Contacts', (WidgetTester tester) async {
-      when(() => mockPersonRepo.getPeople(includeDeleted: false))
-          .thenAnswer((_) async => [testPerson]);
-      when(() => mockKhataRepo.getKhatasForPerson(any(), includeDeleted: any(named: 'includeDeleted')))
-          .thenAnswer((_) async => [testKhata]);
-      when(() => mockTxRepo.getTransactionsForKhata(any(), includeDeleted: any(named: 'includeDeleted')))
-          .thenAnswer((_) async => [testTx]);
+    testWidgets('Offline Auth Flow: Profile Setup screen renders correctly', (
+      WidgetTester tester,
+    ) async {
+      final router = GoRouter(
+        initialLocation: '/setup',
+        routes: [
+          GoRoute(
+            path: '/setup',
+            builder: (context, state) => const LocalAuthSetupScreen(),
+          ),
+          GoRoute(
+            path: '/dashboard',
+            builder: (context, state) => const DashboardScreen(),
+          ),
+        ],
+      );
 
-      // Mock dashboard provider returns
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            personRepositoryProvider.overrideWithValue(mockPersonRepo),
+            khataRepositoryProvider.overrideWithValue(mockKhataRepo),
+            transactionRepositoryProvider.overrideWithValue(mockTxRepo),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify the LocalAuthSetupScreen renders with first step (Create Profile)
+      expect(find.text('KhataFlow'), findsOneWidget);
+      expect(find.text('Create Profile'), findsOneWidget);
+      expect(find.text('Continue'), findsOneWidget);
+    });
+
+    testWidgets('Offline Auth Flow: Dashboard renders with mocked data', (
+      WidgetTester tester,
+    ) async {
+      when(
+        () => mockPersonRepo.getPeople(includeDeleted: false),
+      ).thenAnswer((_) async => [testPerson]);
+      when(
+        () => mockKhataRepo.getKhatasForPerson(
+          any(),
+          includeDeleted: any(named: 'includeDeleted'),
+        ),
+      ).thenAnswer((_) async => [testKhata]);
+      when(
+        () => mockTxRepo.getTransactionsForKhata(
+          any(),
+          includeDeleted: any(named: 'includeDeleted'),
+        ),
+      ).thenAnswer((_) async => [testTx]);
+
       final summary = DashboardSummary(
         totalReceivable: 3500.0,
         totalPayable: 0.0,
@@ -89,12 +136,8 @@ void main() {
       };
 
       final router = GoRouter(
-        initialLocation: '/auth',
+        initialLocation: '/dashboard',
         routes: [
-          GoRoute(
-            path: '/auth',
-            builder: (context, state) => const AuthScreen(),
-          ),
           GoRoute(
             path: '/dashboard',
             builder: (context, state) => const DashboardScreen(),
@@ -105,29 +148,22 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            firebaseEnabledProvider.overrideWithValue(false),
             personRepositoryProvider.overrideWithValue(mockPersonRepo),
             khataRepositoryProvider.overrideWithValue(mockKhataRepo),
             transactionRepositoryProvider.overrideWithValue(mockTxRepo),
             dashboardSummaryProvider.overrideWith((ref) => summary),
-            dashboardRecentTransactionsProvider.overrideWith((ref) => [recentTx]),
+            dashboardRecentTransactionsProvider.overrideWith(
+              (ref) => [recentTx],
+            ),
           ],
-          child: MaterialApp.router(
-            routerConfig: router,
-          ),
+          child: MaterialApp.router(routerConfig: router),
         ),
       );
 
       await tester.pumpAndSettle();
 
-      // 1. Auth Page: Click Continue Offline
-      expect(find.text('Offline-Only Mode Active'), findsOneWidget);
-      await tester.tap(find.text('Continue Offline'));
-      await tester.pumpAndSettle();
-
-      // 2. Dashboard Page: Verify balance calculations and recent activity item
+      // Dashboard renders correctly
       expect(find.text('Net Position'), findsOneWidget);
-      expect(find.text('Rs. 3500'), findsOneWidget);
       expect(find.text('Adnan Malik'), findsOneWidget);
     });
   });

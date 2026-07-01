@@ -14,10 +14,12 @@ class StatementPreviewScreen extends ConsumerStatefulWidget {
   const StatementPreviewScreen({super.key, required this.khataUuid});
 
   @override
-  ConsumerState<StatementPreviewScreen> createState() => _StatementPreviewScreenState();
+  ConsumerState<StatementPreviewScreen> createState() =>
+      _StatementPreviewScreenState();
 }
 
-class _StatementPreviewScreenState extends ConsumerState<StatementPreviewScreen> {
+class _StatementPreviewScreenState
+    extends ConsumerState<StatementPreviewScreen> {
   Person? _person;
   Khata? _khata;
   List<Transaction> _transactions = [];
@@ -47,9 +49,7 @@ class _StatementPreviewScreenState extends ConsumerState<StatementPreviewScreen>
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_khata == null || _person == null) {
@@ -60,7 +60,10 @@ class _StatementPreviewScreenState extends ConsumerState<StatementPreviewScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Statement Preview', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Statement Preview',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: PdfPreview(
         build: (format) async {

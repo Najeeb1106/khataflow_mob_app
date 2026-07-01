@@ -12,6 +12,7 @@ import 'package:khata_app/features/khata/data/repositories/khata_repository.dart
 import 'package:khata_app/features/transactions/data/repositories/transaction_repository.dart';
 
 class MockKhataRepository extends Mock implements KhataRepository {}
+
 class MockTransactionRepository extends Mock implements TransactionRepository {}
 
 void main() {
@@ -47,24 +48,34 @@ void main() {
   });
 
   group('KhataDetailScreen Widget Tests', () {
-    testWidgets('renders khata header details and transactions list', (WidgetTester tester) async {
-      when(() => mockKhataRepo.getKhata('khata-1')).thenAnswer((_) async => testKhata);
-      when(() => mockTxRepo.getTransactionsForKhata('khata-1')).thenAnswer((_) async => [testTx]);
+    testWidgets('renders khata header details and transactions list', (
+      WidgetTester tester,
+    ) async {
+      when(
+        () => mockKhataRepo.getKhata('khata-1'),
+      ).thenAnswer((_) async => testKhata);
+      when(
+        () => mockTxRepo.getTransactionsForKhata('khata-1'),
+      ).thenAnswer((_) async => [testTx]);
 
       final router = GoRouter(
         initialLocation: '/khata/khata-1',
         routes: [
           GoRoute(
             path: '/khata/:khataUuid',
-            builder: (context, state) => KhataDetailScreen(khataUuid: state.pathParameters['khataUuid']!),
+            builder: (context, state) => KhataDetailScreen(
+              khataUuid: state.pathParameters['khataUuid']!,
+            ),
           ),
           GoRoute(
             path: '/statement/:khataUuid',
-            builder: (context, state) => const Scaffold(body: Text('Statement Page')),
+            builder: (context, state) =>
+                const Scaffold(body: Text('Statement Page')),
           ),
           GoRoute(
             path: '/transaction/advanced',
-            builder: (context, state) => const Scaffold(body: Text('Add Tx Page')),
+            builder: (context, state) =>
+                const Scaffold(body: Text('Add Tx Page')),
           ),
         ],
       );
@@ -75,9 +86,7 @@ void main() {
             khataRepositoryProvider.overrideWithValue(mockKhataRepo),
             transactionRepositoryProvider.overrideWithValue(mockTxRepo),
           ],
-          child: MaterialApp.router(
-            routerConfig: router,
-          ),
+          child: MaterialApp.router(routerConfig: router),
         ),
       );
 
@@ -87,7 +96,7 @@ void main() {
       // Verify page layout renders
       expect(find.text('Business Ledger'), findsOneWidget);
       expect(find.text('Outstanding Receivable'), findsOneWidget);
-      expect(find.text('Rs. 4500'), findsNWidgets(2));
+      expect(find.text('Rs. 4,500'), findsNWidgets(2));
 
       // Tap Statement Button in appBar to trigger navigation
       await tester.tap(find.byIcon(Icons.picture_as_pdf_outlined));

@@ -27,8 +27,9 @@ void main() {
 
   group('TransactionRepository Tests', () {
     test('getTransactions returns transactions list', () async {
-      when(() => mockRepo.getTransactions(includeDeleted: false))
-          .thenAnswer((_) async => [testTx]);
+      when(
+        () => mockRepo.getTransactions(includeDeleted: false),
+      ).thenAnswer((_) async => [testTx]);
 
       final result = await mockRepo.getTransactions(includeDeleted: false);
       expect(result.length, 1);
@@ -37,17 +38,31 @@ void main() {
     });
 
     test('getTransactionsForKhata returns transactions under khata', () async {
-      when(() => mockRepo.getTransactionsForKhata('khata-uuid-1', includeDeleted: false))
-          .thenAnswer((_) async => [testTx]);
+      when(
+        () => mockRepo.getTransactionsForKhata(
+          'khata-uuid-1',
+          includeDeleted: false,
+        ),
+      ).thenAnswer((_) async => [testTx]);
 
-      final result = await mockRepo.getTransactionsForKhata('khata-uuid-1', includeDeleted: false);
+      final result = await mockRepo.getTransactionsForKhata(
+        'khata-uuid-1',
+        includeDeleted: false,
+      );
       expect(result.length, 1);
       expect(result.first.khataUuid, 'khata-uuid-1');
-      verify(() => mockRepo.getTransactionsForKhata('khata-uuid-1', includeDeleted: false)).called(1);
+      verify(
+        () => mockRepo.getTransactionsForKhata(
+          'khata-uuid-1',
+          includeDeleted: false,
+        ),
+      ).called(1);
     });
 
     test('getTransaction returns specific transaction', () async {
-      when(() => mockRepo.getTransaction('tx-uuid-1')).thenAnswer((_) async => testTx);
+      when(
+        () => mockRepo.getTransaction('tx-uuid-1'),
+      ).thenAnswer((_) async => testTx);
 
       final result = await mockRepo.getTransaction('tx-uuid-1');
       expect(result, isNotNull);
@@ -63,17 +78,23 @@ void main() {
     });
 
     test('deleteTransaction soft deletes', () async {
-      when(() => mockRepo.deleteTransaction('tx-uuid-1')).thenAnswer((_) async => {});
+      when(
+        () => mockRepo.deleteTransaction('tx-uuid-1'),
+      ).thenAnswer((_) async => {});
 
       await mockRepo.deleteTransaction('tx-uuid-1');
       verify(() => mockRepo.deleteTransaction('tx-uuid-1')).called(1);
     });
 
     test('permanentlyDeleteTransaction hard deletes', () async {
-      when(() => mockRepo.permanentlyDeleteTransaction('tx-uuid-1')).thenAnswer((_) async => {});
+      when(
+        () => mockRepo.permanentlyDeleteTransaction('tx-uuid-1'),
+      ).thenAnswer((_) async => {});
 
       await mockRepo.permanentlyDeleteTransaction('tx-uuid-1');
-      verify(() => mockRepo.permanentlyDeleteTransaction('tx-uuid-1')).called(1);
+      verify(
+        () => mockRepo.permanentlyDeleteTransaction('tx-uuid-1'),
+      ).called(1);
     });
   });
 }

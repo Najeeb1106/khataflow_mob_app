@@ -12,6 +12,7 @@ import 'package:khata_app/features/people/data/repositories/person_repository.da
 import 'package:khata_app/features/khata/data/repositories/khata_repository.dart';
 
 class MockPersonRepository extends Mock implements PersonRepository {}
+
 class MockKhataRepository extends Mock implements KhataRepository {}
 
 void main() {
@@ -38,9 +39,14 @@ void main() {
   });
 
   group('QuickAddTransactionScreen Widget Tests', () {
-    testWidgets('renders initial quick add screen options', (WidgetTester tester) async {
-      when(() => mockPersonRepo.getPeople(includeDeleted: any(named: 'includeDeleted')))
-          .thenAnswer((_) async => [testPerson]);
+    testWidgets('renders initial quick add screen options', (
+      WidgetTester tester,
+    ) async {
+      when(
+        () => mockPersonRepo.getPeople(
+          includeDeleted: any(named: 'includeDeleted'),
+        ),
+      ).thenAnswer((_) async => [testPerson]);
 
       final router = GoRouter(
         initialLocation: '/transaction/quick-add',
@@ -58,9 +64,7 @@ void main() {
             personRepositoryProvider.overrideWithValue(mockPersonRepo),
             khataRepositoryProvider.overrideWithValue(mockKhataRepo),
           ],
-          child: MaterialApp.router(
-            routerConfig: router,
-          ),
+          child: MaterialApp.router(routerConfig: router),
         ),
       );
 

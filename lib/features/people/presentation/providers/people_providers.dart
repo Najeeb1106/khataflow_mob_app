@@ -11,7 +11,8 @@ class PeopleListNotifier extends StateNotifier<AsyncValue<List<Person>>> {
   final PersonRepository _repository;
   final Ref _ref;
 
-  PeopleListNotifier(this._repository, this._ref) : super(const AsyncValue.loading()) {
+  PeopleListNotifier(this._repository, this._ref)
+    : super(const AsyncValue.loading()) {
     loadPeople();
   }
 
@@ -60,7 +61,8 @@ class PeopleListNotifier extends StateNotifier<AsyncValue<List<Person>>> {
   }
 }
 
-final peopleListProvider = StateNotifierProvider<PeopleListNotifier, AsyncValue<List<Person>>>((ref) {
-  final repository = ref.watch(personRepositoryProvider);
-  return PeopleListNotifier(repository, ref);
-});
+final peopleListProvider =
+    StateNotifierProvider<PeopleListNotifier, AsyncValue<List<Person>>>((ref) {
+      final repository = ref.watch(personRepositoryProvider);
+      return PeopleListNotifier(repository, ref);
+    });

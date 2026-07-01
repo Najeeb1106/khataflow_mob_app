@@ -5,13 +5,11 @@ import 'package:khata_app/features/settings/presentation/screens/settings_screen
 
 void main() {
   group('SettingsScreen Widget Tests', () {
-    testWidgets('renders profile and setting rows correctly', (WidgetTester tester) async {
+    testWidgets('renders profile and setting rows correctly', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: SettingsScreen(),
-          ),
-        ),
+        const ProviderScope(child: MaterialApp(home: SettingsScreen())),
       );
 
       // Verify layout rows exist

@@ -5,7 +5,9 @@ import 'package:khata_app/features/onboarding/presentation/screens/onboarding_sc
 
 void main() {
   group('OnboardingScreen Widget Tests', () {
-    testWidgets('renders all pages and transitions on Next click', (WidgetTester tester) async {
+    testWidgets('renders all pages and transitions on Next click', (
+      WidgetTester tester,
+    ) async {
       final router = GoRouter(
         initialLocation: '/onboarding',
         routes: [
@@ -15,16 +17,13 @@ void main() {
           ),
           GoRoute(
             path: '/setup-profile',
-            builder: (context, state) => const Scaffold(body: Text('Setup Profile Page')),
+            builder: (context, state) =>
+                const Scaffold(body: Text('Setup Profile Page')),
           ),
         ],
       );
 
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: router,
-        ),
-      );
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
 
       // Verify First slide content
       expect(find.text('No More Paper Ledgers'), findsOneWidget);
@@ -53,7 +52,9 @@ void main() {
       expect(find.text('Setup Profile Page'), findsOneWidget);
     });
 
-    testWidgets('Skip button navigates immediately to auth', (WidgetTester tester) async {
+    testWidgets('Skip button navigates immediately to auth', (
+      WidgetTester tester,
+    ) async {
       final router = GoRouter(
         initialLocation: '/onboarding',
         routes: [
@@ -63,16 +64,13 @@ void main() {
           ),
           GoRoute(
             path: '/setup-profile',
-            builder: (context, state) => const Scaffold(body: Text('Setup Profile Page')),
+            builder: (context, state) =>
+                const Scaffold(body: Text('Setup Profile Page')),
           ),
         ],
       );
 
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: router,
-        ),
-      );
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
 
       // Tap Skip
       await tester.tap(find.text('Skip'));

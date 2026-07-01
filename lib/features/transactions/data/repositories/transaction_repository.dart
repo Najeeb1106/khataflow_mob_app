@@ -4,7 +4,10 @@ import '../models/transaction.dart';
 
 abstract class TransactionRepository {
   Future<List<Transaction>> getTransactions({bool includeDeleted = false});
-  Future<List<Transaction>> getTransactionsForKhata(String khataUuid, {bool includeDeleted = false});
+  Future<List<Transaction>> getTransactionsForKhata(
+    String khataUuid, {
+    bool includeDeleted = false,
+  });
   Future<Transaction?> getTransaction(String uuid);
   Future<void> saveTransaction(Transaction transaction);
   Future<void> deleteTransaction(String uuid);
@@ -15,7 +18,9 @@ class LocalTransactionRepository implements TransactionRepository {
   final Isar isar = IsarService.instance;
 
   @override
-  Future<List<Transaction>> getTransactions({bool includeDeleted = false}) async {
+  Future<List<Transaction>> getTransactions({
+    bool includeDeleted = false,
+  }) async {
     if (includeDeleted) {
       return isar.transactions.where().findAll();
     } else {
@@ -24,11 +29,18 @@ class LocalTransactionRepository implements TransactionRepository {
   }
 
   @override
-  Future<List<Transaction>> getTransactionsForKhata(String khataUuid, {bool includeDeleted = false}) async {
+  Future<List<Transaction>> getTransactionsForKhata(
+    String khataUuid, {
+    bool includeDeleted = false,
+  }) async {
     if (includeDeleted) {
       return isar.transactions.filter().khataUuidEqualTo(khataUuid).findAll();
     } else {
-      return isar.transactions.filter().khataUuidEqualTo(khataUuid).isDeletedEqualTo(false).findAll();
+      return isar.transactions
+          .filter()
+          .khataUuidEqualTo(khataUuid)
+          .isDeletedEqualTo(false)
+          .findAll();
     }
   }
 

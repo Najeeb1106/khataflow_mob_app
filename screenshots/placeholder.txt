@@ -1,0 +1,2 @@
+Place your Play Store screenshots in this directory.
+Recommended size: 1080 x 1920 or 1080 x 2280.

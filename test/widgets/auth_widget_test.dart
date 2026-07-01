@@ -5,7 +5,9 @@ import 'package:khata_app/features/auth/presentation/screens/local_auth_setup_sc
 
 void main() {
   group('LocalAuthSetupScreen Widget Tests', () {
-    testWidgets('renders Create Profile step correctly', (WidgetTester tester) async {
+    testWidgets('renders Create Profile step correctly', (
+      WidgetTester tester,
+    ) async {
       final router = GoRouter(
         initialLocation: '/setup-profile',
         routes: [
@@ -16,11 +18,7 @@ void main() {
         ],
       );
 
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: router,
-        ),
-      );
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
 
       // Verify page text
       expect(find.text('KhataFlow'), findsOneWidget);

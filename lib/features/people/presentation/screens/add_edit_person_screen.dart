@@ -10,7 +10,8 @@ class AddEditPersonScreen extends ConsumerStatefulWidget {
   const AddEditPersonScreen({super.key, this.personUuid});
 
   @override
-  ConsumerState<AddEditPersonScreen> createState() => _AddEditPersonScreenState();
+  ConsumerState<AddEditPersonScreen> createState() =>
+      _AddEditPersonScreenState();
 }
 
 class _AddEditPersonScreenState extends ConsumerState<AddEditPersonScreen> {
@@ -18,7 +19,7 @@ class _AddEditPersonScreenState extends ConsumerState<AddEditPersonScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   bool _isLoading = false;
   Person? _existingPerson;
 
@@ -60,8 +61,12 @@ class _AddEditPersonScreenState extends ConsumerState<AddEditPersonScreen> {
       ..isDeleted = false;
 
     person.name = _nameController.text.trim();
-    person.phone = _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim();
-    person.notes = _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
+    person.phone = _phoneController.text.trim().isEmpty
+        ? null
+        : _phoneController.text.trim();
+    person.notes = _notesController.text.trim().isEmpty
+        ? null
+        : _notesController.text.trim();
 
     if (_existingPerson == null) {
       await ref.read(peopleListProvider.notifier).addPerson(person);
@@ -92,7 +97,7 @@ class _AddEditPersonScreenState extends ConsumerState<AddEditPersonScreen> {
           IconButton(
             icon: const Icon(Icons.check, color: Colors.teal),
             onPressed: _save,
-          )
+          ),
         ],
       ),
       body: Form(
@@ -105,7 +110,9 @@ class _AddEditPersonScreenState extends ConsumerState<AddEditPersonScreen> {
               decoration: InputDecoration(
                 labelText: 'Contact Name *',
                 prefixIcon: const Icon(Icons.person),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               validator: (val) {
                 if (val == null || val.trim().isEmpty) {
@@ -121,7 +128,9 @@ class _AddEditPersonScreenState extends ConsumerState<AddEditPersonScreen> {
               decoration: InputDecoration(
                 labelText: 'Phone Number (Optional)',
                 prefixIcon: const Icon(Icons.phone),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -131,7 +140,9 @@ class _AddEditPersonScreenState extends ConsumerState<AddEditPersonScreen> {
               decoration: InputDecoration(
                 labelText: 'Additional Notes (Optional)',
                 prefixIcon: const Icon(Icons.notes),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 40),
@@ -141,10 +152,15 @@ class _AddEditPersonScreenState extends ConsumerState<AddEditPersonScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onPressed: _save,
-                child: const Text('Save Contact', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Save Contact',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],

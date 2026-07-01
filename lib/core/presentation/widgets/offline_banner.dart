@@ -19,7 +19,9 @@ class _OfflineBannerState extends State<OfflineBanner> {
   void initState() {
     super.initState();
     _checkInitialConnectivity();
-    _subscription = _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+    _subscription = _connectivity.onConnectivityChanged.listen((
+      ConnectivityResult result,
+    ) {
       setState(() {
         _isOffline = result == ConnectivityResult.none;
       });
@@ -57,7 +59,11 @@ class _OfflineBannerState extends State<OfflineBanner> {
                     SizedBox(width: 8),
                     Text(
                       'Running Offline Mode (No Internet)',
-                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 )

@@ -12,7 +12,8 @@ class KhataListNotifier extends StateNotifier<AsyncValue<List<Khata>>> {
   final String _personUuid;
   final Ref _ref;
 
-  KhataListNotifier(this._repository, this._personUuid, this._ref) : super(const AsyncValue.loading()) {
+  KhataListNotifier(this._repository, this._personUuid, this._ref)
+    : super(const AsyncValue.loading()) {
     loadKhatas();
   }
 
@@ -61,7 +62,12 @@ class KhataListNotifier extends StateNotifier<AsyncValue<List<Khata>>> {
   }
 }
 
-final khatasForPersonProvider = StateNotifierProvider.family<KhataListNotifier, AsyncValue<List<Khata>>, String>((ref, personUuid) {
-  final repository = ref.watch(khataRepositoryProvider);
-  return KhataListNotifier(repository, personUuid, ref);
-});
+final khatasForPersonProvider =
+    StateNotifierProvider.family<
+      KhataListNotifier,
+      AsyncValue<List<Khata>>,
+      String
+    >((ref, personUuid) {
+      final repository = ref.watch(khataRepositoryProvider);
+      return KhataListNotifier(repository, personUuid, ref);
+    });

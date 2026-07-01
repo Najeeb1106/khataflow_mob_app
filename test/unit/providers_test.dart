@@ -26,13 +26,12 @@ void main() {
 
   group('PeopleListNotifier Riverpod Tests', () {
     test('initial state is AsyncLoading and then updates to AsyncData', () async {
-      when(() => mockRepo.getPeople(includeDeleted: any(named: 'includeDeleted')))
-          .thenAnswer((_) async => [testPerson]);
+      when(
+        () => mockRepo.getPeople(includeDeleted: any(named: 'includeDeleted')),
+      ).thenAnswer((_) async => [testPerson]);
 
       final container = ProviderContainer(
-        overrides: [
-          personRepositoryProvider.overrideWithValue(mockRepo),
-        ],
+        overrides: [personRepositoryProvider.overrideWithValue(mockRepo)],
       );
       addTearDown(container.dispose);
 
@@ -47,13 +46,12 @@ void main() {
 
     test('loadPeople sets AsyncError state on repository failure', () async {
       final exception = Exception('Database connection failed');
-      when(() => mockRepo.getPeople(includeDeleted: any(named: 'includeDeleted')))
-          .thenThrow(exception);
+      when(
+        () => mockRepo.getPeople(includeDeleted: any(named: 'includeDeleted')),
+      ).thenThrow(exception);
 
       final container = ProviderContainer(
-        overrides: [
-          personRepositoryProvider.overrideWithValue(mockRepo),
-        ],
+        overrides: [personRepositoryProvider.overrideWithValue(mockRepo)],
       );
       addTearDown(container.dispose);
 
@@ -65,19 +63,18 @@ void main() {
 
     test('addPerson saves a contact and reloads listing', () async {
       when(() => mockRepo.savePerson(any())).thenAnswer((_) async => {});
-      when(() => mockRepo.getPeople(includeDeleted: any(named: 'includeDeleted')))
-          .thenAnswer((_) async => [testPerson]);
+      when(
+        () => mockRepo.getPeople(includeDeleted: any(named: 'includeDeleted')),
+      ).thenAnswer((_) async => [testPerson]);
 
       final container = ProviderContainer(
-        overrides: [
-          personRepositoryProvider.overrideWithValue(mockRepo),
-        ],
+        overrides: [personRepositoryProvider.overrideWithValue(mockRepo)],
       );
       addTearDown(container.dispose);
 
       await container.read(peopleListProvider.notifier).addPerson(testPerson);
       verify(() => mockRepo.savePerson(testPerson)).called(1);
-      
+
       final state = container.read(peopleListProvider);
       expect(state.asData!.value.length, 1);
     });

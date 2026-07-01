@@ -13,7 +13,9 @@ import 'package:khata_app/features/khata/presentation/providers/khata_providers.
 import 'package:khata_app/features/transactions/presentation/providers/transaction_providers.dart';
 
 class MockPersonRepository extends Mock implements PersonRepository {}
+
 class MockKhataRepository extends Mock implements KhataRepository {}
+
 class MockTransactionRepository extends Mock implements TransactionRepository {}
 
 void main() {
@@ -41,13 +43,21 @@ void main() {
   });
 
   group('PeopleListScreen Widget Tests', () {
-    testWidgets('renders list of contacts correctly', (WidgetTester tester) async {
-      when(() => mockPersonRepo.getPeople(includeDeleted: false))
-          .thenAnswer((_) async => [testPerson]);
-      when(() => mockKhataRepo.getKhatasForPerson('p-1', includeDeleted: false))
-          .thenAnswer((_) async => []);
-      when(() => mockTxRepo.getTransactionsForKhata(any(), includeDeleted: any(named: 'includeDeleted')))
-          .thenAnswer((_) async => []);
+    testWidgets('renders list of contacts correctly', (
+      WidgetTester tester,
+    ) async {
+      when(
+        () => mockPersonRepo.getPeople(includeDeleted: false),
+      ).thenAnswer((_) async => [testPerson]);
+      when(
+        () => mockKhataRepo.getKhatasForPerson('p-1', includeDeleted: false),
+      ).thenAnswer((_) async => []);
+      when(
+        () => mockTxRepo.getTransactionsForKhata(
+          any(),
+          includeDeleted: any(named: 'includeDeleted'),
+        ),
+      ).thenAnswer((_) async => []);
 
       final router = GoRouter(
         initialLocation: '/people',
@@ -58,11 +68,14 @@ void main() {
           ),
           GoRoute(
             path: '/people/add',
-            builder: (context, state) => const Scaffold(body: Text('Add Person Page')),
+            builder: (context, state) =>
+                const Scaffold(body: Text('Add Person Page')),
           ),
           GoRoute(
             path: '/people/:id',
-            builder: (context, state) => Scaffold(body: Text('Person Details: ${state.pathParameters['id']}')),
+            builder: (context, state) => Scaffold(
+              body: Text('Person Details: ${state.pathParameters['id']}'),
+            ),
           ),
         ],
       );
@@ -74,9 +87,7 @@ void main() {
             khataRepositoryProvider.overrideWithValue(mockKhataRepo),
             transactionRepositoryProvider.overrideWithValue(mockTxRepo),
           ],
-          child: MaterialApp.router(
-            routerConfig: router,
-          ),
+          child: MaterialApp.router(routerConfig: router),
         ),
       );
 

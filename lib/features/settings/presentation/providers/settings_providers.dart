@@ -8,22 +8,34 @@ class AppSettings {
   final ThemeMode themeMode;
   final String currencySymbol;
   final bool notificationsEnabled;
+  final bool dueDateAlertsEnabled;
+  final bool overdueNoticesEnabled;
+  final bool dailySummaryEnabled;
 
   const AppSettings({
     required this.themeMode,
     required this.currencySymbol,
     required this.notificationsEnabled,
+    required this.dueDateAlertsEnabled,
+    required this.overdueNoticesEnabled,
+    required this.dailySummaryEnabled,
   });
 
   AppSettings copyWith({
     ThemeMode? themeMode,
     String? currencySymbol,
     bool? notificationsEnabled,
+    bool? dueDateAlertsEnabled,
+    bool? overdueNoticesEnabled,
+    bool? dailySummaryEnabled,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
       currencySymbol: currencySymbol ?? this.currencySymbol,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      dueDateAlertsEnabled: dueDateAlertsEnabled ?? this.dueDateAlertsEnabled,
+      overdueNoticesEnabled: overdueNoticesEnabled ?? this.overdueNoticesEnabled,
+      dailySummaryEnabled: dailySummaryEnabled ?? this.dailySummaryEnabled,
     );
   }
 
@@ -31,6 +43,9 @@ class AppSettings {
     'themeMode': themeMode.name,
     'currencySymbol': currencySymbol,
     'notificationsEnabled': notificationsEnabled,
+    'dueDateAlertsEnabled': dueDateAlertsEnabled,
+    'overdueNoticesEnabled': overdueNoticesEnabled,
+    'dailySummaryEnabled': dailySummaryEnabled,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -45,6 +60,9 @@ class AppSettings {
       themeMode: theme,
       currencySymbol: json['currencySymbol'] ?? 'Rs.',
       notificationsEnabled: json['notificationsEnabled'] ?? true,
+      dueDateAlertsEnabled: json['dueDateAlertsEnabled'] ?? true,
+      overdueNoticesEnabled: json['overdueNoticesEnabled'] ?? true,
+      dailySummaryEnabled: json['dailySummaryEnabled'] ?? true,
     );
   }
 
@@ -52,6 +70,9 @@ class AppSettings {
     themeMode: ThemeMode.system,
     currencySymbol: 'Rs.',
     notificationsEnabled: true,
+    dueDateAlertsEnabled: true,
+    overdueNoticesEnabled: true,
+    dailySummaryEnabled: true,
   );
 }
 
@@ -99,6 +120,21 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _saveSettings();
   }
 
+  Future<void> updateDueDateAlertsEnabled(bool enabled) async {
+    state = state.copyWith(dueDateAlertsEnabled: enabled);
+    await _saveSettings();
+  }
+
+  Future<void> updateOverdueNoticesEnabled(bool enabled) async {
+    state = state.copyWith(overdueNoticesEnabled: enabled);
+    await _saveSettings();
+  }
+
+  Future<void> updateDailySummaryEnabled(bool enabled) async {
+    state = state.copyWith(dailySummaryEnabled: enabled);
+    await _saveSettings();
+  }
+
   Future<void> _saveSettings() async {
     try {
       final file = await _localFile;
@@ -109,7 +145,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 }
 
-final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((ref) {
+final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((
+  ref,
+) {
   return SettingsNotifier();
 });
 

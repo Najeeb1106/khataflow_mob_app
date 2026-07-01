@@ -1,117 +1,201 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/services/notification_service.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/presentation/design_system.dart';
+import '../../../../core/presentation/widgets/shared_widgets.dart';
+import '../../../dashboard/presentation/providers/dashboard_providers.dart';
+import '../../../transactions/data/models/transaction.dart';
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
 
-  void _triggerMockDueAlert(BuildContext context) {
-    NotificationService().showNotification(
-      id: 101,
-      title: 'Payment Due Today ⏰',
-      body: 'Ali Khan owes Rs. 10,000. Due by end of day.',
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Mock alert triggered! Check your notifications.')),
-    );
-  }
-
-  void _triggerMockSummaryAlert(BuildContext context) {
-    NotificationService().showNotification(
-      id: 102,
-      title: 'Daily Summary Report 📊',
-      body: 'Total Receivables: Rs. 45,000. 2 accounts overdue.',
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Mock daily summary triggered! Check notifications.')),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dueStatsAsync = ref.watch(dashboardDueStatsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark ? AppDesign.darkBg : AppDesign.lightBg,
       appBar: AppBar(
-        title: const Text('Reminders & Alerts', style: TextStyle(fontWeight: FontWeight.bold)),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(24.0),
-        children: [
-          // Alerts Info
-          Card(
-            color: Colors.teal[50],
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Active Notification Profiles',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.teal),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildProfileRow('Due Date Alerts', 'Alerts when repayment timeline is reached.'),
-                  _buildProfileRow('Overdue Notices', 'Daily updates for accounts remaining unpaid.'),
-                  _buildProfileRow('Daily Summary', 'A quick nightly snapshot of outstanding balances.'),
-                ],
-              ),
-            ),
+        title: const Text(
+          'Notifications',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Notification Settings',
+            onPressed: () => context.push('/notifications/settings'),
           ),
-          const SizedBox(height: 32),
-          const Text('Developer Simulator', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text(
-            'Use the buttons below to manually trigger local notification alerts for testing.',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            icon: const Icon(Icons.notifications_active),
-            label: const Text('Simulate "Due Today" Alert'),
-            onPressed: () => _triggerMockDueAlert(context),
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal[800],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            icon: const Icon(Icons.bar_chart),
-            label: const Text('Simulate "Daily Summary" Alert'),
-            onPressed: () => _triggerMockSummaryAlert(context),
-          ),
+          const SizedBox(width: 8),
         ],
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+      ),
+      body: RefreshIndicator(
+        color: AppDesign.primaryEmerald,
+        onRefresh: () async {
+          ref.invalidate(dashboardDueStatsProvider);
+        },
+        child: dueStatsAsync.when(
+          data: (stats) {
+            final List<Map<String, dynamic>> allNotifications = [];
+
+            // Add overdue notifications
+            if (stats['overdue'] != null) {
+              for (final item in stats['overdue']!) {
+                allNotifications.add({
+                  ...item,
+                  'urgency': 'Overdue ⚠️',
+                  'color': AppDesign.redPayable,
+                  'icon': Icons.warning_amber_rounded,
+                  'message': 'Repayment is overdue since ${_formatDate(item['transaction'].dueDate!)}.',
+                });
+              }
+            }
+
+            // Add due today notifications
+            if (stats['dueToday'] != null) {
+              for (final item in stats['dueToday']!) {
+                allNotifications.add({
+                  ...item,
+                  'urgency': 'Due Today ⏰',
+                  'color': AppDesign.amberWarning,
+                  'icon': Icons.today_rounded,
+                  'message': 'Repayment is due today.',
+                });
+              }
+            }
+
+            // Add due tomorrow notifications
+            if (stats['dueTomorrow'] != null) {
+              for (final item in stats['dueTomorrow']!) {
+                allNotifications.add({
+                  ...item,
+                  'urgency': 'Due Tomorrow 🔔',
+                  'color': Colors.blueAccent,
+                  'icon': Icons.notifications_active_outlined,
+                  'message': 'Repayment is due tomorrow.',
+                });
+              }
+            }
+
+            // Sort all by date or keep urgency order (Overdue -> Today -> Tomorrow)
+            if (allNotifications.isEmpty) {
+              return const EmptyState(
+                icon: '🔔',
+                title: 'All caught up!',
+                subtitle: 'No pending due or overdue notifications at the moment.',
+              );
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(AppDesign.space16),
+              itemCount: allNotifications.length,
+              itemBuilder: (context, index) {
+                final item = allNotifications[index];
+                final tx = item['transaction'] as Transaction;
+                final personName = item['personName'] as String;
+                final khataTitle = item['khataTitle'] as String;
+                final color = item['color'] as Color;
+                final icon = item['icon'] as IconData;
+                final urgency = item['urgency'] as String;
+                final message = item['message'] as String;
+
+                final isOwed = tx.type == TransactionType.gave || tx.type == TransactionType.paid;
+                final actionText = isOwed ? 'collect from' : 'pay to';
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: AppDesign.space12),
+                  color: isDark ? AppDesign.darkCard : Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppDesign.borderMedium,
+                    side: BorderSide(
+                      color: isDark ? AppDesign.darkBorder : AppDesign.lightBorder,
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppDesign.space16,
+                      vertical: AppDesign.space8,
+                    ),
+                    leading: Container(
+                      padding: const EdgeInsets.all(AppDesign.space8),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: color, size: 24),
+                    ),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          urgency,
+                          style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          'PKR ${tx.amount.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Please remember to $actionText $personName ($khataTitle). $message',
+                            style: TextStyle(
+                              color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                              fontSize: 13,
+                              height: 1.3,
+                            ),
+                          ),
+                          if (tx.notes != null && tx.notes!.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Notes: "${tx.notes}"',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontStyle: FontStyle.italic,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    onTap: () {
+                      context.push('/khata/${tx.khataUuid}');
+                    },
+                  ),
+                );
+              },
+            );
+          },
+          loading: () => const Center(
+            child: CircularProgressIndicator(
+              color: AppDesign.primaryEmerald,
+            ),
+          ),
+          error: (err, _) => Center(
+            child: Text('Error loading notifications: $err'),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildProfileRow(String title, String description) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.check_circle_outline, size: 20, color: Colors.teal),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                Text(description, style: const TextStyle(fontSize: 12, color: Colors.black54)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 }

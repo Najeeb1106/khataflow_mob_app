@@ -16,7 +16,8 @@ class TrashScreen extends ConsumerStatefulWidget {
   ConsumerState<TrashScreen> createState() => _TrashScreenState();
 }
 
-class _TrashScreenState extends ConsumerState<TrashScreen> with SingleTickerProviderStateMixin {
+class _TrashScreenState extends ConsumerState<TrashScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final Isar _isar = IsarService.instance;
 
@@ -40,10 +41,16 @@ class _TrashScreenState extends ConsumerState<TrashScreen> with SingleTickerProv
 
   Future<void> _loadDeletedItems() async {
     setState(() => _isLoading = true);
-    final people = await _isar.persons.filter().isDeletedEqualTo(true).findAll();
+    final people = await _isar.persons
+        .filter()
+        .isDeletedEqualTo(true)
+        .findAll();
     final khatas = await _isar.khatas.filter().isDeletedEqualTo(true).findAll();
-    final txs = await _isar.transactions.filter().isDeletedEqualTo(true).findAll();
-    
+    final txs = await _isar.transactions
+        .filter()
+        .isDeletedEqualTo(true)
+        .findAll();
+
     setState(() {
       _deletedPeople = people;
       _deletedKhatas = khatas;
@@ -86,7 +93,10 @@ class _TrashScreenState extends ConsumerState<TrashScreen> with SingleTickerProv
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trash Bin', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Trash Bin',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.teal,
@@ -154,7 +164,8 @@ class _TrashScreenState extends ConsumerState<TrashScreen> with SingleTickerProv
   }
 
   Widget _buildDeletedTransactionsList() {
-    if (_deletedTransactions.isEmpty) return _buildEmptyState('No deleted transactions.');
+    if (_deletedTransactions.isEmpty)
+      return _buildEmptyState('No deleted transactions.');
     return ListView.builder(
       itemCount: _deletedTransactions.length,
       padding: const EdgeInsets.all(16),

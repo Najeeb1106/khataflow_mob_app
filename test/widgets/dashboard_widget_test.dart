@@ -8,7 +8,16 @@ import 'package:khata_app/features/transactions/data/models/transaction.dart';
 
 void main() {
   group('DashboardScreen Widget Tests', () {
-    testWidgets('displays dashboard summary cards and transaction activity', (WidgetTester tester) async {
+    testWidgets('displays dashboard summary cards and transaction activity', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       final summary = DashboardSummary(
         totalReceivable: 15000.0,
         totalPayable: 5000.0,
@@ -37,15 +46,18 @@ void main() {
           ),
           GoRoute(
             path: '/trash',
-            builder: (context, state) => const Scaffold(body: Text('Trash Page')),
+            builder: (context, state) =>
+                const Scaffold(body: Text('Trash Page')),
           ),
           GoRoute(
             path: '/notifications',
-            builder: (context, state) => const Scaffold(body: Text('Notifications Page')),
+            builder: (context, state) =>
+                const Scaffold(body: Text('Notifications Page')),
           ),
           GoRoute(
             path: '/transaction/quick-add',
-            builder: (context, state) => const Scaffold(body: Text('Quick Add Page')),
+            builder: (context, state) =>
+                const Scaffold(body: Text('Quick Add Page')),
           ),
         ],
       );
@@ -54,11 +66,20 @@ void main() {
         ProviderScope(
           overrides: [
             dashboardSummaryProvider.overrideWith((ref) => summary),
-            dashboardRecentTransactionsProvider.overrideWith((ref) => [recentTx]),
+            dashboardRecentTransactionsProvider.overrideWith(
+              (ref) => [recentTx],
+            ),
+            dashboardDueStatsProvider.overrideWith(
+              (ref) => {
+                'overdue': [],
+                'dueToday': [],
+                'dueTomorrow': [],
+                'upcoming': [],
+              },
+            ),
+            dashboardMonthlyInsightsProvider.overrideWith((ref) => []),
           ],
-          child: MaterialApp.router(
-            routerConfig: router,
-          ),
+          child: MaterialApp.router(routerConfig: router),
         ),
       );
 
@@ -74,7 +95,8 @@ void main() {
       expect(find.text('Rs. 500'), findsOneWidget);
 
       // Click Quick Add to verify navigation
-      await tester.tap(find.text('Quick Add'));
+      final quickAddFinder = find.text('Quick Add');
+      await tester.tap(quickAddFinder);
       await tester.pumpAndSettle();
 
       expect(find.text('Quick Add Page'), findsOneWidget);

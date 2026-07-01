@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'core/database/isar_service.dart';
 import 'core/router/router.dart';
 import 'core/services/notification_service.dart';
@@ -7,10 +8,11 @@ import 'core/services/purge_service.dart';
 import 'features/settings/presentation/providers/settings_providers.dart';
 import 'core/services/security_service.dart';
 import 'features/auth/presentation/screens/unlock_screen.dart';
+import 'core/presentation/design_system.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Isar Local Database
   await IsarService.initialize();
 
@@ -28,11 +30,7 @@ void main() async {
     debugPrint("Failed to run Database Auto-Purge: $e");
   }
 
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerStatefulWidget {
@@ -86,23 +84,40 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       title: 'KhataFlow',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.teal,
-          primary: Colors.teal,
+          seedColor: AppDesign.primaryEmerald,
+          primary: AppDesign.primaryEmerald,
           brightness: Brightness.light,
+          surface: AppDesign.lightBg,
         ),
         useMaterial3: true,
+        scaffoldBackgroundColor: AppDesign.lightBg,
+        textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
+        cardTheme: CardThemeData(
+          color: AppDesign.lightCard,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppDesign.borderMedium,
+            side: const BorderSide(color: AppDesign.lightBorder, width: 1),
+          ),
+        ),
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.teal,
-          primary: Colors.teal,
+          seedColor: AppDesign.primaryEmerald,
+          primary: AppDesign.primaryEmerald,
           brightness: Brightness.dark,
+          surface: AppDesign.darkBg,
         ),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF121212),
+        scaffoldBackgroundColor: AppDesign.darkBg,
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
         cardTheme: CardThemeData(
-          color: Colors.grey.shade900,
-          elevation: 2,
+          color: AppDesign.darkCard,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppDesign.borderMedium,
+            side: const BorderSide(color: AppDesign.darkBorder, width: 1),
+          ),
         ),
       ),
       themeMode: themeMode,

@@ -1,21 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../providers/dashboard_providers.dart';
 import '../../../../core/presentation/widgets/offline_banner.dart';
 import 'package:khata_app/features/settings/presentation/providers/settings_providers.dart';
 import '../../../../core/services/security_service.dart';
 import '../../../transactions/data/models/transaction.dart';
+import '../../../../core/presentation/design_system.dart';
+import '../../../../core/presentation/widgets/shared_widgets.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   String _getFormattedDate() {
     final now = DateTime.now();
-    final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    final weekdays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
     final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${weekdays[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}, ${now.year}';
   }
@@ -31,38 +52,100 @@ class DashboardScreen extends ConsumerWidget {
     }
   }
 
+  String _getRelativeDateString(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final txDate = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(txDate).inDays;
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    if (diff > 1 && diff < 7) return '$diff days ago';
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(dashboardSummaryProvider);
     final recentAsync = ref.watch(dashboardRecentTransactionsProvider);
     final currency = ref.watch(currencySymbolProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final dueStatsAsync = ref.watch(dashboardDueStatsProvider);
+    final dueStats = dueStatsAsync.valueOrNull;
+    int notificationCount = 0;
+    if (dueStats != null) {
+      notificationCount += (dueStats['overdue']?.length ?? 0);
+      notificationCount += (dueStats['dueToday']?.length ?? 0);
+      notificationCount += (dueStats['dueTomorrow']?.length ?? 0);
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'KhataFlow',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.teal),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: AppDesign.primaryEmerald,
+                letterSpacing: -0.5,
+              ),
             ),
             Text(
               _getFormattedDate(),
-              style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.normal),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+                fontWeight: FontWeight.normal,
+              ),
             ),
           ],
         ),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.search_rounded,
+              color: AppDesign.primaryEmerald,
+              size: 24,
+            ),
+            tooltip: 'Search everything',
+            onPressed: () => context.push('/search'),
+          ),
+          IconButton(
+            icon: Badge(
+              label: Text(notificationCount.toString()),
+              backgroundColor: AppDesign.redPayable,
+              isLabelVisible: notificationCount > 0,
+              child: Icon(
+                Icons.notifications_outlined,
+                color: AppDesign.primaryEmerald,
+                size: 24,
+              ),
+            ),
+            tooltip: 'Notifications',
+            onPressed: () => context.push('/notifications'),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: OfflineBanner(
         child: RefreshIndicator(
+          color: AppDesign.primaryEmerald,
           onRefresh: () async {
             ref.invalidate(dashboardSummaryProvider);
             ref.invalidate(dashboardRecentTransactionsProvider);
+            ref.invalidate(dashboardDueStatsProvider);
+            ref.invalidate(dashboardMonthlyInsightsProvider);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDesign.space20,
+              vertical: AppDesign.space16,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -73,20 +156,30 @@ class DashboardScreen extends ConsumerWidget {
                     final userName = snapshot.data ?? 'User';
                     return Text(
                       '${_getGreeting()}, $userName 👋',
-                      style: const TextStyle(fontSize: 15, color: Colors.grey, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade600,
+                        fontWeight: FontWeight.w600,
+                      ),
                     );
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppDesign.space12),
 
                 summaryAsync.when(
                   data: (summary) {
-                    final netPrefix = summary.netPosition >= 0 ? '$currency ' : '-$currency ';
-
-                    // Math for ratio bar
-                    final total = summary.totalReceivable + summary.totalPayable;
-                    final receivableRatio = total > 0 ? summary.totalReceivable / total : 0.5;
-                    final payableRatio = total > 0 ? summary.totalPayable / total : 0.5;
+                    final isPositive = summary.netPosition > 0;
+                    final isNegative = summary.netPosition < 0;
+                    final total =
+                        summary.totalReceivable + summary.totalPayable;
+                    final receivableRatio = total > 0
+                        ? summary.totalReceivable / total
+                        : 0.5;
+                    final payableRatio = total > 0
+                        ? summary.totalPayable / total
+                        : 0.5;
 
                     return Column(
                       children: [
@@ -95,23 +188,28 @@ class DashboardScreen extends ConsumerWidget {
                           width: double.infinity,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: summary.netPosition >= 0
-                                  ? [Colors.teal.shade800, Colors.green.shade600]
-                                  : [Colors.blueGrey.shade800, Colors.red.shade700],
+                              colors: isPositive
+                                  ? [
+                                      const Color(0xFF0F766E),
+                                      const Color(0xFF10B981),
+                                    ]
+                                  : isNegative
+                                  ? [
+                                      const Color(0xFF7F1D1D),
+                                      const Color(0xFFEF4444),
+                                    ]
+                                  : [
+                                      const Color(0xFF1E293B),
+                                      const Color(0xFF475569),
+                                    ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: (summary.netPosition >= 0 ? Colors.teal : Colors.red).withValues(alpha: 0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
+                            borderRadius: AppDesign.borderLarge,
+                            boxShadow: AppDesign.premiumShadow,
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: AppDesign.borderLarge,
                             child: Stack(
                               children: [
                                 Positioned(
@@ -122,55 +220,76 @@ class DashboardScreen extends ConsumerWidget {
                                     height: 140,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: Colors.white.withValues(alpha: 0.08),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.08,
+                                      ),
                                     ),
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.all(24.0),
+                                  padding: const EdgeInsets.all(
+                                    AppDesign.space24,
+                                  ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'NET POSITION',
                                         style: TextStyle(
                                           fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white.withValues(alpha: 0.85),
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.85,
+                                          ),
                                           letterSpacing: 1.2,
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
+                                      const SizedBox(height: AppDesign.space8),
                                       Text(
-                                        '$netPrefix${summary.netPosition.abs().toStringAsFixed(0)}',
+                                        '$currency ${summary.netPosition.abs().toStringAsFixed(0)}',
                                         style: const TextStyle(
                                           fontSize: 34,
-                                          fontWeight: FontWeight.w900,
+                                          fontWeight: FontWeight.w800,
                                           color: Colors.white,
+                                          letterSpacing: -1,
                                         ),
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: AppDesign.space16),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(30),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.15,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Icon(
-                                              summary.netPosition >= 0 ? Icons.trending_up : Icons.trending_down,
+                                              summary.netPosition >= 0
+                                                  ? Icons.trending_up_rounded
+                                                  : Icons.trending_down_rounded,
                                               color: Colors.white,
                                               size: 16,
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
-                                              summary.netPosition >= 0 ? 'You are owed money overall' : 'You owe money overall',
+                                              summary.netPosition > 0
+                                                  ? 'Net Receivable'
+                                                  : summary.netPosition < 0
+                                                  ? 'Net Payable'
+                                                  : 'Settled Balance',
                                               style: const TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.white,
-                                                fontWeight: FontWeight.w500,
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                           ],
@@ -183,27 +302,50 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: AppDesign.space20),
 
-                        // Two Mini Summary Cards
+                        // Two Summary Cards
                         Row(
                           children: [
                             Expanded(
                               child: Container(
-                                padding: const EdgeInsets.all(16.0),
+                                padding: const EdgeInsets.all(
+                                  AppDesign.space16,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: Colors.green.shade50.withValues(alpha: 0.5),
-                                  border: Border.all(color: Colors.green.shade100),
-                                  borderRadius: BorderRadius.circular(16),
+                                  color: Colors.green.shade50.withValues(
+                                    alpha: isDark ? 0.05 : 0.5,
+                                  ),
+                                  border: Border.all(
+                                    color: Colors.green.shade100.withValues(
+                                      alpha: isDark ? 0.1 : 0.6,
+                                    ),
+                                  ),
+                                  borderRadius: AppDesign.borderMedium,
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('You Will Get', style: TextStyle(fontSize: 12, color: Colors.green.shade800, fontWeight: FontWeight.bold)),
+                                    Text(
+                                      'You Will Get',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark
+                                            ? Colors.green.shade400
+                                            : Colors.green.shade800,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                     const SizedBox(height: 6),
                                     Text(
                                       '$currency ${summary.totalReceivable.toStringAsFixed(0)}',
-                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green.shade900),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark
+                                            ? Colors.green.shade300
+                                            : Colors.green.shade900,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -212,20 +354,43 @@ class DashboardScreen extends ConsumerWidget {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Container(
-                                padding: const EdgeInsets.all(16.0),
+                                padding: const EdgeInsets.all(
+                                  AppDesign.space16,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.shade50.withValues(alpha: 0.5),
-                                  border: Border.all(color: Colors.red.shade100),
-                                  borderRadius: BorderRadius.circular(16),
+                                  color: Colors.red.shade50.withValues(
+                                    alpha: isDark ? 0.05 : 0.5,
+                                  ),
+                                  border: Border.all(
+                                    color: Colors.red.shade100.withValues(
+                                      alpha: isDark ? 0.1 : 0.6,
+                                    ),
+                                  ),
+                                  borderRadius: AppDesign.borderMedium,
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('You Will Give', style: TextStyle(fontSize: 12, color: Colors.red.shade800, fontWeight: FontWeight.bold)),
+                                    Text(
+                                      'You Will Give',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark
+                                            ? Colors.red.shade400
+                                            : Colors.red.shade800,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                     const SizedBox(height: 6),
                                     Text(
                                       '$currency ${summary.totalPayable.toStringAsFixed(0)}',
-                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red.shade900),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark
+                                            ? Colors.red.shade300
+                                            : Colors.red.shade900,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -235,7 +400,7 @@ class DashboardScreen extends ConsumerWidget {
                         ),
 
                         // Cashflow Ratio Progress Bar
-                        const SizedBox(height: 20),
+                        const SizedBox(height: AppDesign.space20),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -244,11 +409,23 @@ class DashboardScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   'Receivables Ratio',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade600,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 Text(
                                   '${(receivableRatio * 100).toStringAsFixed(0)}% vs ${(payableRatio * 100).toStringAsFixed(0)}%',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark
+                                        ? Colors.grey.shade300
+                                        : Colors.grey.shade700,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ],
                             ),
@@ -260,61 +437,379 @@ class DashboardScreen extends ConsumerWidget {
                                 child: Row(
                                   children: [
                                     Expanded(
-                                      flex: (receivableRatio * 100).toInt(),
-                                      child: Container(color: Colors.green.shade400),
+                                      flex: (receivableRatio * 100)
+                                          .toInt()
+                                          .clamp(1, 99),
+                                      child: Container(
+                                        color: AppDesign.primaryEmerald,
+                                      ),
                                     ),
                                     Expanded(
-                                      flex: (payableRatio * 100).toInt(),
-                                      child: Container(color: Colors.red.shade400),
+                                      flex: (payableRatio * 100).toInt().clamp(
+                                        1,
+                                        99,
+                                      ),
+                                      child: Container(
+                                        color: AppDesign.redPayable,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
                             ),
                           ],
-                        )
+                        ),
                       ],
                     );
                   },
-                  loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
-                  error: (err, _) => Center(child: Text('Error loading summary: $err')),
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(
+                        color: AppDesign.primaryEmerald,
+                      ),
+                    ),
+                  ),
+                  error: (err, _) =>
+                      Center(child: Text('Error loading summary: $err')),
                 ),
 
+                // Due Statuses Section
+                const SizedBox(height: AppDesign.space24),
+                const SectionHeader(title: 'Due Statuses'),
+                const SizedBox(height: AppDesign.space12),
+                ref
+                    .watch(dashboardDueStatsProvider)
+                    .when(
+                      data: (stats) {
+                        final overdueTxs = stats['overdue'] ?? [];
+                        final dueTodayTxs = stats['dueToday'] ?? [];
+                        final dueTomorrowTxs = stats['dueTomorrow'] ?? [];
+                        final upcomingTxs = stats['upcoming'] ?? [];
+
+                        final overdueTotal = overdueTxs.fold<double>(
+                          0,
+                          (sum, item) =>
+                              sum + (item['transaction'] as Transaction).amount,
+                        );
+                        final dueTodayTotal = dueTodayTxs.fold<double>(
+                          0,
+                          (sum, item) =>
+                              sum + (item['transaction'] as Transaction).amount,
+                        );
+                        final dueTomorrowTotal = dueTomorrowTxs.fold<double>(
+                          0,
+                          (sum, item) =>
+                              sum + (item['transaction'] as Transaction).amount,
+                        );
+                        final upcomingTotal = upcomingTxs.fold<double>(
+                          0,
+                          (sum, item) =>
+                              sum + (item['transaction'] as Transaction).amount,
+                        );
+
+                        return GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.45,
+                          children: [
+                            _buildDueStatusCard(
+                              context,
+                              title: 'Overdue',
+                              count: overdueTxs.length,
+                              total: overdueTotal,
+                              currency: currency,
+                              color: AppDesign.redPayable,
+                              icon: Icons.warning_amber_rounded,
+                              onTap: () => _showDueTransactionsBottomSheet(
+                                context,
+                                'Overdue Transactions',
+                                overdueTxs,
+                                currency,
+                              ),
+                            ),
+                            _buildDueStatusCard(
+                              context,
+                              title: 'Due Today',
+                              count: dueTodayTxs.length,
+                              total: dueTodayTotal,
+                              currency: currency,
+                              color: AppDesign.amberWarning,
+                              icon: Icons.today_rounded,
+                              onTap: () => _showDueTransactionsBottomSheet(
+                                context,
+                                'Due Today',
+                                dueTodayTxs,
+                                currency,
+                              ),
+                            ),
+                            _buildDueStatusCard(
+                              context,
+                              title: 'Due Tomorrow',
+                              count: dueTomorrowTxs.length,
+                              total: dueTomorrowTotal,
+                              currency: currency,
+                              color: Colors.blueAccent,
+                              icon: Icons.notifications_active_outlined,
+                              onTap: () => _showDueTransactionsBottomSheet(
+                                context,
+                                'Due Tomorrow',
+                                dueTomorrowTxs,
+                                currency,
+                              ),
+                            ),
+                            _buildDueStatusCard(
+                              context,
+                              title: 'Upcoming',
+                              count: upcomingTxs.length,
+                              total: upcomingTotal,
+                              currency: currency,
+                              color: AppDesign.grayNeutral,
+                              icon: Icons.calendar_month_rounded,
+                              onTap: () => _showDueTransactionsBottomSheet(
+                                context,
+                                'Upcoming Due Transactions',
+                                upcomingTxs,
+                                currency,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(10),
+                          child: CircularProgressIndicator(
+                            color: AppDesign.primaryEmerald,
+                          ),
+                        ),
+                      ),
+                      error: (err, _) => Center(
+                        child: Text('Error loading due statuses: $err'),
+                      ),
+                    ),
+
+                // Cash Flow Trends (Analytics Graph)
+                const SizedBox(height: AppDesign.space24),
+                const SectionHeader(title: 'Monthly Cash Flow Trends'),
+                const SizedBox(height: AppDesign.space12),
+                ref
+                    .watch(dashboardMonthlyInsightsProvider)
+                    .when(
+                      data: (insights) {
+                        if (insights.isEmpty) {
+                          return const Card(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text(
+                                'No historical transaction data available to plot.',
+                              ),
+                            ),
+                          );
+                        }
+
+                        final reversedInsights = insights.reversed.toList();
+                        final maxAmount = reversedInsights.fold<double>(
+                          1000,
+                          (maxVal, item) =>
+                              (item.cashIn > item.cashOut
+                                      ? item.cashIn
+                                      : item.cashOut) >
+                                  maxVal
+                              ? (item.cashIn > item.cashOut
+                                    ? item.cashIn
+                                    : item.cashOut)
+                              : maxVal,
+                        );
+
+                        return Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppDesign.borderMedium,
+                            side: BorderSide(
+                              color: isDark
+                                  ? AppDesign.darkBorder
+                                  : AppDesign.lightBorder,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppDesign.space16),
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  height: 180,
+                                  child: BarChart(
+                                    BarChartData(
+                                      alignment: BarChartAlignment.spaceAround,
+                                      maxY: maxAmount * 1.15,
+                                      barTouchData: BarTouchData(enabled: true),
+                                      titlesData: FlTitlesData(
+                                        show: true,
+                                        bottomTitles: AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: true,
+                                            getTitlesWidget:
+                                                (double value, TitleMeta meta) {
+                                                  final index = value.toInt();
+                                                  if (index >= 0 &&
+                                                      index <
+                                                          reversedInsights
+                                                              .length) {
+                                                    return Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                            top: 6,
+                                                          ),
+                                                      child: Text(
+                                                        reversedInsights[index]
+                                                            .monthLabel
+                                                            .split(' ')
+                                                            .first,
+                                                        style: const TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                  return const Text('');
+                                                },
+                                          ),
+                                        ),
+                                        leftTitles: const AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: false,
+                                          ),
+                                        ),
+                                        rightTitles: const AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: false,
+                                          ),
+                                        ),
+                                        topTitles: const AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: false,
+                                          ),
+                                        ),
+                                      ),
+                                      gridData: const FlGridData(show: false),
+                                      borderData: FlBorderData(show: false),
+                                      barGroups: List.generate(
+                                        reversedInsights.length,
+                                        (index) {
+                                          final insight =
+                                              reversedInsights[index];
+                                          return BarChartGroupData(
+                                            x: index,
+                                            barRods: [
+                                              BarChartRodData(
+                                                toY: insight.cashIn,
+                                                color: AppDesign.primaryEmerald,
+                                                width: 10,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              BarChartRodData(
+                                                toY: insight.cashOut,
+                                                color: AppDesign.redPayable,
+                                                width: 10,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: AppDesign.primaryEmerald,
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'Cash In',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: AppDesign.redPayable,
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'Cash Out',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(
+                          color: AppDesign.primaryEmerald,
+                        ),
+                      ),
+                      error: (e, s) => const SizedBox.shrink(),
+                    ),
+
                 // Quick Actions Grid
-                const SizedBox(height: 28),
-                const Text(
-                  'Quick Actions',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppDesign.space24),
+                const SectionHeader(title: 'Quick Actions'),
+                const SizedBox(height: AppDesign.space12),
                 GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 4,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
                   children: [
                     _buildActionButton(
                       context,
-                      icon: Icons.add_box_outlined,
+                      icon: Icons.add_box_rounded,
                       label: 'Quick Add',
                       onTap: () => context.push('/transaction/quick-add'),
                     ),
                     _buildActionButton(
                       context,
-                      icon: Icons.assignment_outlined,
+                      icon: Icons.people_alt_rounded,
+                      label: 'People',
+                      onTap: () => context.push('/people'),
+                    ),
+                    _buildActionButton(
+                      context,
+                      icon: Icons.analytics_rounded,
                       label: 'Reports',
                       onTap: () => context.push('/reports'),
                     ),
                     _buildActionButton(
                       context,
-                      icon: Icons.delete_sweep_outlined,
-                      label: 'Trash',
-                      onTap: () => context.push('/trash'),
-                    ),
-                    _buildActionButton(
-                      context,
-                      icon: Icons.settings_outlined,
+                      icon: Icons.settings_rounded,
                       label: 'Settings',
                       onTap: () => context.push('/settings'),
                     ),
@@ -322,26 +817,22 @@ class DashboardScreen extends ConsumerWidget {
                 ),
 
                 // Recent Activity Header
-                const SizedBox(height: 28),
-                const Text(
-                  'Recent Activity',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppDesign.space24),
+                const SectionHeader(title: 'Recent Activity'),
+                const SizedBox(height: AppDesign.space12),
 
                 recentAsync.when(
                   data: (recentList) {
                     if (recentList.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 40.0),
-                          child: Column(
-                            children: [
-                              const Text('💸', style: TextStyle(fontSize: 40)),
-                              const SizedBox(height: 8),
-                              Text('No transactions recorded yet.', style: TextStyle(color: Colors.grey[500])),
-                            ],
-                          ),
+                      return EmptyState(
+                        icon: '💸',
+                        title: 'No Transactions Yet',
+                        subtitle: 'Start by adding your first transaction.',
+                        action: AppButton(
+                          label: 'Add Transaction',
+                          icon: Icons.add_rounded,
+                          onPressed: () =>
+                              context.push('/transaction/quick-add'),
                         ),
                       );
                     }
@@ -353,37 +844,46 @@ class DashboardScreen extends ConsumerWidget {
                         final item = recentList[index];
                         final tx = item['transaction'] as Transaction;
                         final personName = item['personName'] as String;
-                        final isGaveOrPaid = tx.type == TransactionType.gave || tx.type == TransactionType.paid;
-                        final color = isGaveOrPaid ? Colors.green[700] : Colors.red[700];
+                        final isGaveOrPaid =
+                            tx.type == TransactionType.gave ||
+                            tx.type == TransactionType.paid;
+                        final color = isGaveOrPaid
+                            ? AppDesign.greenReceivable
+                            : AppDesign.redPayable;
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 10),
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(color: Colors.grey.shade100),
-                          ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: color?.withValues(alpha: 0.08),
+                              backgroundColor: color.withValues(alpha: 0.08),
                               child: Icon(
-                                isGaveOrPaid ? Icons.arrow_outward : Icons.call_received,
+                                isGaveOrPaid
+                                    ? Icons.arrow_outward_rounded
+                                    : Icons.call_received_rounded,
                                 color: color,
                                 size: 20,
                               ),
                             ),
                             title: Text(
                               personName,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
                             subtitle: Text(
-                              '${tx.type.name.toUpperCase()} • ${item['khataTitle']}',
-                              style: const TextStyle(fontSize: 11, color: Colors.black54),
+                              '${tx.type.name.toUpperCase()} • ${item['khataTitle']} • ${_getRelativeDateString(tx.transactionDate ?? tx.createdAt)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600,
+                              ),
                             ),
                             trailing: Text(
                               '$currency ${tx.amount.toStringAsFixed(0)}',
                               style: TextStyle(
-                                fontWeight: FontWeight.w900,
+                                fontWeight: FontWeight.bold,
                                 color: color,
                                 fontSize: 14,
                               ),
@@ -393,7 +893,11 @@ class DashboardScreen extends ConsumerWidget {
                       },
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(
+                      color: AppDesign.primaryEmerald,
+                    ),
+                  ),
                   error: (err, _) => Text('Error: $err'),
                 ),
               ],
@@ -404,29 +908,221 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButton(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.teal.withValues(alpha: 0.04),
-          border: Border.all(color: Colors.teal.withValues(alpha: 0.08)),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.teal, size: 24),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.teal),
-              textAlign: TextAlign.center,
+  Widget _buildActionButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppDesign.borderMedium,
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppDesign.primaryEmerald.withValues(alpha: 0.04),
+            border: Border.all(
+              color: AppDesign.primaryEmerald.withValues(alpha: 0.1),
             ),
-          ],
+            borderRadius: AppDesign.borderMedium,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: AppDesign.primaryEmerald, size: 24),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.grey.shade300 : AppDesign.primaryTeal,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDueStatusCard(
+    BuildContext context, {
+    required String title,
+    required int count,
+    required double total,
+    required String currency,
+    required Color color,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Card(
+      elevation: 0,
+      color: color.withValues(alpha: 0.03),
+      shape: RoundedRectangleBorder(
+        borderRadius: AppDesign.borderMedium,
+        side: BorderSide(color: color.withValues(alpha: 0.15)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppDesign.borderMedium,
+        child: Padding(
+          padding: const EdgeInsets.all(AppDesign.space12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(icon, color: color, size: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$currency ${total.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDueTransactionsBottomSheet(
+    BuildContext context,
+    String title,
+    List<Map<String, dynamic>> items,
+    String currency,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppDesign.primaryEmerald,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const Divider(),
+              Expanded(
+                child: items.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No transactions in this category.',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: items.length,
+                        itemBuilder: (context, index) {
+                          final item = items[index];
+                          final tx = item['transaction'] as Transaction;
+                          final personName = item['personName'] as String;
+                          final khataTitle = item['khataTitle'] as String;
+                          final isGaveOrPaid =
+                              tx.type == TransactionType.gave ||
+                              tx.type == TransactionType.paid;
+                          final color = isGaveOrPaid
+                              ? AppDesign.greenReceivable
+                              : AppDesign.redPayable;
+
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            child: ListTile(
+                              title: Text(
+                                personName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${tx.type.name.toUpperCase()} • $khataTitle\nDue: ${tx.dueDate!.day}/${tx.dueDate!.month}/${tx.dueDate!.year}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark
+                                      ? Colors.grey.shade400
+                                      : Colors.black54,
+                                ),
+                              ),
+                              trailing: Text(
+                                '$currency ${tx.amount.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: color,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

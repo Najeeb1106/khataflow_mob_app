@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:local_auth/local_auth.dart';
 import '../../../../core/services/security_service.dart';
 
 class UnlockScreen extends StatefulWidget {
@@ -16,7 +15,6 @@ class _UnlockScreenState extends State<UnlockScreen> {
   String _enteredPin = '';
   String _profileName = '';
   bool _biometricsAvailable = false;
-  bool _isFingerprint = false;
 
   @override
   void initState() {
@@ -34,22 +32,10 @@ class _UnlockScreenState extends State<UnlockScreen> {
   Future<void> _loadProfileAndTriggerBiometrics() async {
     final name = await SecurityService.getProfileName();
     final biometricsEnabled = await SecurityService.isBiometricsEnabled();
-    final fingerprintEnabled = await SecurityService.isFingerprintEnabled();
-    
-    bool isFingerprint = false;
-    
-    if (biometricsEnabled) {
-      try {
-        final localAuth = LocalAuthentication();
-        final available = await localAuth.getAvailableBiometrics();
-        isFingerprint = (available.contains(BiometricType.fingerprint) || available.contains(BiometricType.strong)) && fingerprintEnabled;
-      } catch (_) {}
-    }
 
     setState(() {
       _profileName = name ?? 'User';
       _biometricsAvailable = biometricsEnabled;
-      _isFingerprint = isFingerprint;
     });
 
     if (biometricsEnabled) {
@@ -87,7 +73,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
 
   Future<void> _checkPin() async {
     if (_enteredPin.length < 4) return;
-    
+
     // Check if the current pin length matches either a 4 or 6 digit PIN setup.
     // Wait, let's verify only when they hit 4, 5, or 6 characters depending on the PIN.
     // To make it seamless, if the PIN is verified successfully, we unlock!
@@ -96,6 +82,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
       _unlock();
     } else if (_enteredPin.length >= 4) {
       // If reached max length and invalid, show error and reset
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Invalid Security PIN.'),
@@ -122,12 +109,19 @@ class _UnlockScreenState extends State<UnlockScreen> {
         style: OutlinedButton.styleFrom(
           shape: const CircleBorder(),
           padding: EdgeInsets.zero,
-          side: BorderSide(color: Colors.teal.withOpacity(0.3), width: 1.5),
+          side: BorderSide(
+            color: Colors.teal.withValues(alpha: 0.3),
+            width: 1.5,
+          ),
         ),
         onPressed: () => _onKeyPress(label),
         child: Text(
           label,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.teal),
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.teal,
+          ),
         ),
       ),
     );
@@ -157,7 +151,11 @@ class _UnlockScreenState extends State<UnlockScreen> {
               const SizedBox(height: 12),
               const Text(
                 'Unlock KhataFlow',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.teal),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -178,7 +176,9 @@ class _UnlockScreenState extends State<UnlockScreen> {
                     decoration: BoxDecoration(
                       color: filled ? Colors.teal : Colors.grey[300],
                       shape: BoxShape.circle,
-                      border: Border.all(color: filled ? Colors.teal : Colors.grey[400]!),
+                      border: Border.all(
+                        color: filled ? Colors.teal : Colors.grey[400]!,
+                      ),
                     ),
                   );
                 }),
@@ -194,15 +194,27 @@ class _UnlockScreenState extends State<UnlockScreen> {
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [_buildKey('1'), _buildKey('2'), _buildKey('3')],
+                        children: [
+                          _buildKey('1'),
+                          _buildKey('2'),
+                          _buildKey('3'),
+                        ],
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [_buildKey('4'), _buildKey('5'), _buildKey('6')],
+                        children: [
+                          _buildKey('4'),
+                          _buildKey('5'),
+                          _buildKey('6'),
+                        ],
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [_buildKey('7'), _buildKey('8'), _buildKey('9')],
+                        children: [
+                          _buildKey('7'),
+                          _buildKey('8'),
+                          _buildKey('9'),
+                        ],
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -219,13 +231,24 @@ class _UnlockScreenState extends State<UnlockScreen> {
                                   )
                                 : TextButton(
                                     onPressed: _onClear,
-                                    child: const Text('Clear', style: TextStyle(color: Colors.teal, fontSize: 13, fontWeight: FontWeight.bold)),
+                                    child: const Text(
+                                      'Clear',
+                                      style: TextStyle(
+                                        color: Colors.teal,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                           ),
                           _buildKey('0'),
                           _buildActionKey(
                             IconButton(
-                              icon: const Icon(Icons.backspace_outlined, size: 26, color: Colors.teal),
+                              icon: const Icon(
+                                Icons.backspace_outlined,
+                                size: 26,
+                                color: Colors.teal,
+                              ),
                               onPressed: _onDelete,
                             ),
                           ),

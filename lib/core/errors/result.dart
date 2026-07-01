@@ -60,21 +60,21 @@ extension ResultExtension<T> on Result<T> {
 
   /// Returns the data payload, or `null` if this is a [Failure].
   T? get dataOrNull => switch (this) {
-        Success(:final data) => data,
-        Failure() => null,
-      };
+    Success(:final data) => data,
+    Failure() => null,
+  };
 
   /// Returns the exception, or `null` if this is a [Success].
   AppException? get exceptionOrNull => switch (this) {
-        Success() => null,
-        Failure(:final exception) => exception,
-      };
+    Success() => null,
+    Failure(:final exception) => exception,
+  };
 
   /// Maps the success value, leaving failures unchanged.
   Result<R> map<R>(R Function(T data) transform) => switch (this) {
-        Success(:final data) => Success(transform(data)),
-        Failure(:final exception) => Failure(exception),
-      };
+    Success(:final data) => Success(transform(data)),
+    Failure(:final exception) => Failure(exception),
+  };
 
   /// Runs [onSuccess] or [onFailure] depending on this result.
   void fold({

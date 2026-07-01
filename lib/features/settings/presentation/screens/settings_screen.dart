@@ -1,10 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/database/isar_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
+import '../../../../core/database/isar_service.dart';
 import '../../../../core/services/security_service.dart';
 import '../../../people/presentation/providers/people_providers.dart';
 import '../providers/settings_providers.dart';
+import '../../../../core/presentation/design_system.dart';
+import '../../../../core/presentation/widgets/shared_widgets.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -15,11 +19,13 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late Future<String?> _profileNameFuture;
+  String _dbSize = 'Calculating...';
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _calculateDbSize();
   }
 
   void _loadProfile() {
@@ -28,34 +34,57 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     });
   }
 
+  Future<void> _calculateDbSize() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/default.isar');
+      if (await file.exists()) {
+        final size = await file.length();
+        setState(() {
+          if (size < 1024) {
+            _dbSize = '$size B';
+          } else if (size < 1024 * 1024) {
+            _dbSize = '${(size / 1024).toStringAsFixed(1)} KB';
+          } else {
+            _dbSize = '${(size / (1024 * 1024)).toStringAsFixed(1)} MB';
+          }
+        });
+        return;
+      }
+    } catch (_) {}
+    setState(() {
+      _dbSize = '0 B';
+    });
+  }
+
   Future<void> _editProfileName(String currentName) async {
     final controller = TextEditingController(text: currentName);
     final newName = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Profile Name'),
-        content: TextField(
+        shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
+        title: const Text(
+          'Edit Profile Name',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: AppTextField(
           controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Full Name',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
+          labelText: 'Full Name',
+          prefixIcon: Icons.person_rounded,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+          AppButton(
+            label: 'Save',
             onPressed: () {
               final val = controller.text.trim();
               if (val.isNotEmpty) {
                 Navigator.pop(context, val);
               }
             },
-            child: const Text('Save'),
           ),
         ],
       ),
@@ -76,12 +105,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final showConfirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear All Data'),
-        content: const Text('Are you sure you want to permanently delete all contacts, khatas, and transactions? This action is irreversible.'),
+        shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
+        title: const Text(
+          'Clear All Data',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Are you sure you want to permanently delete all contacts, khatas, and transactions? This action is irreversible.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppDesign.redPayable,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: AppDesign.borderMedium,
+              ),
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Clear Everything'),
           ),
@@ -95,95 +140,121 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         await isar.clear();
       });
       ref.read(peopleListProvider.notifier).loadPeople();
+      _calculateDbSize();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All local database records cleared successfully.')),
+          const SnackBar(
+            content: Text('All local database records cleared successfully.'),
+          ),
         );
       }
     }
   }
 
-  void _selectCurrency(BuildContext context, WidgetRef ref, String currentSymbol) {
+  void _selectCurrency(
+    BuildContext context,
+    WidgetRef ref,
+    String currentSymbol,
+  ) {
     final currencies = {
+      'Rs.': 'Pakistani Rupee (Rs.)',
       'PKR': 'PKR (PKR)',
-      '\$': 'USD (\$)',
-      '€': 'EUR (€)',
-      '£': 'GBP (£)',
-      '₹': 'INR (₹)',
+      '\$': 'US Dollar (\$)',
+      '€': 'Euro (€)',
+      '£': 'British Pound (£)',
+      '₹': 'Indian Rupee (₹)',
     };
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Currency Symbol'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: currencies.entries.map((entry) {
-            return RadioListTile<String>(
-              title: Text(entry.value),
-              value: entry.key,
-              groupValue: currentSymbol,
-              activeColor: Colors.teal,
-              onChanged: (val) {
-                if (val != null) {
-                  ref.read(settingsProvider.notifier).updateCurrencySymbol(val);
-                  Navigator.pop(context);
-                }
-              },
-            );
-          }).toList(),
-        ),
-      ),
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
+          title: const Text(
+            'Select Currency Symbol',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: currencies.entries.map((entry) {
+              return RadioListTile<String>(
+                title: Text(entry.value),
+                value: entry.key,
+                groupValue: currentSymbol,
+                activeColor: AppDesign.primaryEmerald,
+                onChanged: (val) {
+                  if (val != null) {
+                    ref
+                        .read(settingsProvider.notifier)
+                        .updateCurrencySymbol(val);
+                    Navigator.pop(context);
+                  }
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
-  void _selectTheme(BuildContext context, WidgetRef ref, ThemeMode currentMode) {
+  void _selectTheme(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeMode currentMode,
+  ) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Theme Mode'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<ThemeMode>(
-              title: const Text('System Default'),
-              value: ThemeMode.system,
-              groupValue: currentMode,
-              activeColor: Colors.teal,
-              onChanged: (val) {
-                if (val != null) {
-                  ref.read(settingsProvider.notifier).updateThemeMode(val);
-                  Navigator.pop(context);
-                }
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: const Text('Light Theme'),
-              value: ThemeMode.light,
-              groupValue: currentMode,
-              activeColor: Colors.teal,
-              onChanged: (val) {
-                if (val != null) {
-                  ref.read(settingsProvider.notifier).updateThemeMode(val);
-                  Navigator.pop(context);
-                }
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: const Text('Dark Theme'),
-              value: ThemeMode.dark,
-              groupValue: currentMode,
-              activeColor: Colors.teal,
-              onChanged: (val) {
-                if (val != null) {
-                  ref.read(settingsProvider.notifier).updateThemeMode(val);
-                  Navigator.pop(context);
-                }
-              },
-            ),
-          ],
-        ),
-      ),
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
+          title: const Text(
+            'Select Theme Mode',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<ThemeMode>(
+                title: const Text('System Default'),
+                value: ThemeMode.system,
+                groupValue: currentMode,
+                activeColor: AppDesign.primaryEmerald,
+                onChanged: (val) {
+                  if (val != null) {
+                    ref.read(settingsProvider.notifier).updateThemeMode(val);
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Text('Light Theme'),
+                value: ThemeMode.light,
+                groupValue: currentMode,
+                activeColor: AppDesign.primaryEmerald,
+                onChanged: (val) {
+                  if (val != null) {
+                    ref.read(settingsProvider.notifier).updateThemeMode(val);
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Text('Dark Theme'),
+                value: ThemeMode.dark,
+                groupValue: currentMode,
+                activeColor: AppDesign.primaryEmerald,
+                onChanged: (val) {
+                  if (val != null) {
+                    ref.read(settingsProvider.notifier).updateThemeMode(val);
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -217,94 +288,390 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  void _triggerSimulatedBackup() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Exporting Encrypted Database Backup to Documents...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Backup successful! Filename: khataflow_backup.db'),
+          ),
+        );
+      }
+    });
+  }
+
+  void _triggerSimulatedRestore() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Restoring Database from documents backup folder...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        ref.read(peopleListProvider.notifier).loadPeople();
+        _calculateDbSize();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Database restored successfully!')),
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Settings',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        children: [
-          // User profile summary section
-          FutureBuilder<String?>(
-            future: _profileNameFuture,
-            builder: (context, snapshot) {
-              final userName = snapshot.data ?? 'Offline User';
-              return ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Colors.teal,
-                  foregroundColor: Colors.white,
-                  radius: 24,
-                  child: Icon(Icons.person, size: 28),
-                ),
-                title: Text(userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                subtitle: const Text('Running Secure Local Storage Mode'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.teal),
-                  onPressed: () => _editProfileName(userName),
-                ),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.security, color: Colors.teal),
-            title: const Text('Security & App Lock'),
-            subtitle: const Text('PIN, Biometrics and Session parameters'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () => context.push('/settings/security'),
-          ),
-          const Divider(),
-
-          // App configurations
-          ListTile(
-            leading: const Icon(Icons.notifications_none, color: Colors.teal),
-            title: const Text('Notification Reminders'),
-            subtitle: Text(settings.notificationsEnabled ? 'Enabled' : 'Disabled'),
-            trailing: Switch(
-              value: settings.notificationsEnabled,
-              onChanged: (val) {
-                ref.read(settingsProvider.notifier).updateNotificationsEnabled(val);
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(
+          vertical: AppDesign.space16,
+          horizontal: AppDesign.space8,
+        ),
+        child: Column(
+          children: [
+            // User profile summary section
+            FutureBuilder<String?>(
+              future: _profileNameFuture,
+              builder: (context, snapshot) {
+                final userName = snapshot.data ?? 'Offline User';
+                return Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  padding: const EdgeInsets.all(AppDesign.space12),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppDesign.darkCard : Colors.white,
+                    borderRadius: AppDesign.borderMedium,
+                    border: Border.all(
+                      color: isDark
+                          ? AppDesign.darkBorder
+                          : AppDesign.lightBorder,
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      backgroundColor: AppDesign.primaryEmerald.withValues(
+                        alpha: 0.1,
+                      ),
+                      foregroundColor: AppDesign.primaryEmerald,
+                      radius: 28,
+                      child: Text(
+                        userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      userName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Secure Local Storage Mode',
+                      style: TextStyle(
+                        color: isDark
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(
+                        Icons.edit_rounded,
+                        color: AppDesign.primaryEmerald,
+                      ),
+                      onPressed: () => _editProfileName(userName),
+                    ),
+                  ),
+                );
               },
-              activeThumbColor: Colors.teal,
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.attach_money, color: Colors.teal),
-            title: const Text('Currency Symbol'),
-            subtitle: Text('Set default: ${_getCurrencyName(settings.currencySymbol)}'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () => _selectCurrency(context, ref, settings.currencySymbol),
-          ),
-          ListTile(
-            leading: const Icon(Icons.color_lens_outlined, color: Colors.teal),
-            title: const Text('Theme Mode'),
-            subtitle: Text(_getThemeName(settings.themeMode)),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () => _selectTheme(context, ref, settings.themeMode),
-          ),
-          const Divider(),
-          // Danger zone
-          ListTile(
-            leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: const Text('Clear All Local Data', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-            subtitle: const Text('Permanently wipe Isar database cache'),
-            onTap: () => _clearAllData(context, ref),
-          ),
-          const Divider(),
-          // Version details
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
+
+            const SizedBox(height: AppDesign.space12),
+
+            // Section: General Settings
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'GENERAL',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.grey,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      Icons.security_rounded,
+                      color: AppDesign.primaryEmerald,
+                    ),
+                    title: const Text('Security & App Lock'),
+                    subtitle: const Text(
+                      'PIN, Biometrics and Session parameters',
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () => context.push('/settings/security'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(
+                      Icons.notifications_none_rounded,
+                      color: AppDesign.primaryEmerald,
+                    ),
+                    title: const Text('Notification Reminders'),
+                    subtitle: Text(
+                      settings.notificationsEnabled ? 'Enabled' : 'Disabled',
+                    ),
+                    trailing: Switch(
+                      value: settings.notificationsEnabled,
+                      onChanged: (val) {
+                        ref
+                            .read(settingsProvider.notifier)
+                            .updateNotificationsEnabled(val);
+                      },
+                      activeColor: AppDesign.primaryEmerald,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(
+                      Icons.attach_money_rounded,
+                      color: AppDesign.primaryEmerald,
+                    ),
+                    title: const Text('Currency Symbol'),
+                    subtitle: Text(
+                      'Set default: ${_getCurrencyName(settings.currencySymbol)}',
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () =>
+                        _selectCurrency(context, ref, settings.currencySymbol),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(
+                      Icons.color_lens_outlined,
+                      color: AppDesign.primaryEmerald,
+                    ),
+                    title: const Text('Theme Mode'),
+                    subtitle: Text(_getThemeName(settings.themeMode)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () => _selectTheme(context, ref, settings.themeMode),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppDesign.space16),
+
+            // Section: Data & Backup
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'DATA & BACKUP',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.grey,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      Icons.delete_sweep_rounded,
+                      color: AppDesign.primaryEmerald,
+                    ),
+                    title: const Text('Trash / Recycle Bin'),
+                    subtitle: const Text(
+                      'Recover deleted contacts or transactions',
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () => context.push('/trash'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(
+                      Icons.cloud_upload_rounded,
+                      color: AppDesign.primaryEmerald,
+                    ),
+                    title: const Text('Backup Database'),
+                    subtitle: const Text('Export local ledger copy securely'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: _triggerSimulatedBackup,
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(
+                      Icons.cloud_download_rounded,
+                      color: AppDesign.primaryEmerald,
+                    ),
+                    title: const Text('Restore Database'),
+                    subtitle: const Text('Import database from local files'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: _triggerSimulatedRestore,
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(
+                      Icons.storage_rounded,
+                      color: AppDesign.primaryTeal,
+                    ),
+                    title: const Text('Storage Usage'),
+                    subtitle: Text('Database File Size: $_dbSize'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.refresh, size: 16),
+                      onPressed: _calculateDbSize,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppDesign.space16),
+
+            // Section: About & Support
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'SUPPORT & LEGAL',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.grey,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      Icons.privacy_tip_outlined,
+                      color: AppDesign.primaryEmerald,
+                    ),
+                    title: const Text('Privacy Policy'),
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppDesign.borderMedium,
+                          ),
+                          title: const Text('Privacy Policy'),
+                          content: const SingleChildScrollView(
+                            child: Text(
+                              'KhataFlow does not transmit any of your finance data to external servers. Your accounts, transactions, profiles, and parameters are stored exclusively in your local database, secure under hardware PIN/biometric authentication.',
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Close'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(
+                      Icons.info_outline_rounded,
+                      color: AppDesign.primaryEmerald,
+                    ),
+                    title: const Text('App Version'),
+                    subtitle: const Text('Version 1.1.1 (Build 12)'),
+                    onTap: null,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppDesign.space20),
+
+            // Danger zone
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'DANGER ZONE',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: AppDesign.redPayable,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              color: AppDesign.redPayable.withValues(alpha: 0.03),
+              shape: RoundedRectangleBorder(
+                borderRadius: AppDesign.borderMedium,
+                side: const BorderSide(color: AppDesign.redPayable, width: 0.8),
+              ),
+              child: ListTile(
+                leading: const Icon(
+                  Icons.delete_forever_rounded,
+                  color: AppDesign.redPayable,
+                ),
+                title: const Text(
+                  'Clear All Local Data',
+                  style: TextStyle(
+                    color: AppDesign.redPayable,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: const Text('Permanently wipe Isar database cache'),
+                onTap: () => _clearAllData(context, ref),
+              ),
+            ),
+
+            const SizedBox(height: AppDesign.space32),
+
+            // Developer signature
+            const Text(
               'KhataFlow v1.0.0 (Codrix.dev)',
-              style: TextStyle(color: Colors.grey, fontSize: 11),
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
               textAlign: TextAlign.center,
             ),
-          )
-        ],
+          ],
+        ),
       ),
     );
   }

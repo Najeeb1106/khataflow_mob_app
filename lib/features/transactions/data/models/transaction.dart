@@ -2,13 +2,7 @@ import 'package:isar/isar.dart';
 
 part 'transaction.g.dart';
 
-enum TransactionType {
-  gave,
-  received,
-  borrowed,
-  paid,
-  adjustment,
-}
+enum TransactionType { gave, received, borrowed, paid, adjustment }
 
 @collection
 class Transaction {
@@ -27,6 +21,7 @@ class Transaction {
   String? notes;
   DateTime? dueDate;
   DateTime? reminderDate;
+  DateTime? transactionDate;
   String? photoUrl;
 
   late DateTime createdAt;

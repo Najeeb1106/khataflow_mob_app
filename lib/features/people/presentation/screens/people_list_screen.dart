@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/utils/balance_calculator.dart';
 import '../providers/people_providers.dart';
 import '../providers/balance_providers.dart';
 import 'package:khata_app/features/settings/presentation/providers/settings_providers.dart';
+import '../../../../core/presentation/design_system.dart';
+import '../../../../core/presentation/widgets/shared_widgets.dart';
 
 class PeopleListScreen extends ConsumerStatefulWidget {
   const PeopleListScreen({super.key});
@@ -15,14 +16,11 @@ class PeopleListScreen extends ConsumerStatefulWidget {
 
 class _PeopleListScreenState extends ConsumerState<PeopleListScreen> {
   String _searchQuery = '';
-
-  /// Auto-focus controller so the search bar receives focus on screen open.
   final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    // Briefly delay so the navigator animation finishes before focusing.
     Future.delayed(const Duration(milliseconds: 350), () {
       if (mounted) _searchFocusNode.requestFocus();
     });
@@ -34,7 +32,6 @@ class _PeopleListScreenState extends ConsumerState<PeopleListScreen> {
     super.dispose();
   }
 
-  /// Pull-to-refresh: invalidate the people list to reload from Isar.
   Future<void> _onRefresh() async {
     await ref.read(peopleListProvider.notifier).loadPeople();
   }
@@ -42,33 +39,43 @@ class _PeopleListScreenState extends ConsumerState<PeopleListScreen> {
   @override
   Widget build(BuildContext context) {
     final peopleState = ref.watch(peopleListProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('People', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'People',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: Column(
         children: [
-          // ── Search Bar ────────────────────────────────────────────────
+          // Search Bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDesign.space16,
+              vertical: AppDesign.space8,
+            ),
             child: Semantics(
               label: 'Search people by name',
               child: TextField(
                 focusNode: _searchFocusNode,
                 decoration: InputDecoration(
                   hintText: 'Search people...',
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppDesign.primaryEmerald,
+                  ),
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: isDark ? AppDesign.darkCard : Colors.grey[100],
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: AppDesign.borderMedium,
                     borderSide: BorderSide.none,
                   ),
-                  // Clear button when there is text
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
+                          icon: const Icon(Icons.clear_rounded, size: 18),
                           tooltip: 'Clear search',
                           onPressed: () {
                             setState(() => _searchQuery = '');
@@ -85,42 +92,42 @@ class _PeopleListScreenState extends ConsumerState<PeopleListScreen> {
             ),
           ),
 
-          // ── People List ───────────────────────────────────────────────
+          // People List
           Expanded(
             child: peopleState.when(
               data: (people) {
-                // Apply search filter
                 final filtered = people
-                    .where((p) =>
-                        p.name.toLowerCase().contains(_searchQuery))
+                    .where((p) => p.name.toLowerCase().contains(_searchQuery))
                     .toList();
 
                 if (filtered.isEmpty) {
                   return RefreshIndicator(
                     onRefresh: _onRefresh,
-                    color: Colors.teal,
+                    color: AppDesign.primaryEmerald,
                     child: ListView(
-                      // ListView needed so RefreshIndicator can scroll
                       children: [
                         SizedBox(
                           height: MediaQuery.of(context).size.height * 0.5,
                           child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text('👥',
-                                    style: TextStyle(fontSize: 48)),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _searchQuery.isEmpty
-                                      ? 'No contacts yet.\nTap + to add your first contact.'
-                                      : 'No contacts match "$_searchQuery".',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      color: Colors.grey[500], fontSize: 16),
-                                ),
-                              ],
-                            ),
+                            child: _searchQuery.isEmpty
+                                ? EmptyState(
+                                    icon: '👥',
+                                    title: 'No contacts yet',
+                                    subtitle:
+                                        'Tap the button below to add your first customer or vendor contact.',
+                                    action: AppButton(
+                                      label: 'Add Contact',
+                                      icon: Icons.person_add_rounded,
+                                      onPressed: () =>
+                                          context.push('/people/add'),
+                                    ),
+                                  )
+                                : EmptyState(
+                                    icon: '👥',
+                                    title: 'No search results',
+                                    subtitle:
+                                        'No contacts match the search query "$_searchQuery".',
+                                  ),
                           ),
                         ),
                       ],
@@ -130,11 +137,13 @@ class _PeopleListScreenState extends ConsumerState<PeopleListScreen> {
 
                 return RefreshIndicator(
                   onRefresh: _onRefresh,
-                  color: Colors.teal,
+                  color: AppDesign.primaryEmerald,
                   child: ListView.builder(
                     itemCount: filtered.length,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                      horizontal: AppDesign.space16,
+                      vertical: AppDesign.space8,
+                    ),
                     itemBuilder: (context, index) {
                       final person = filtered[index];
                       return _PersonListItem(person: person);
@@ -142,7 +151,11 @@ class _PeopleListScreenState extends ConsumerState<PeopleListScreen> {
                   ),
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(
+                child: CircularProgressIndicator(
+                  color: AppDesign.primaryEmerald,
+                ),
+              ),
               error: (err, _) => Center(child: Text('Error: $err')),
             ),
           ),
@@ -150,18 +163,15 @@ class _PeopleListScreenState extends ConsumerState<PeopleListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/people/add'),
-        backgroundColor: Colors.teal,
+        backgroundColor: AppDesign.primaryEmerald,
         foregroundColor: Colors.white,
         tooltip: 'Add new contact',
-        child: const Icon(Icons.person_add),
+        child: const Icon(Icons.person_add_rounded),
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// _PersonListItem — NO FutureBuilder, uses personBalanceProvider instead
-// ─────────────────────────────────────────────────────────────────────────────
 class _PersonListItem extends ConsumerWidget {
   final dynamic person;
 
@@ -169,77 +179,86 @@ class _PersonListItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the cached, deduplicated balance provider — no inline DB queries.
     final balanceAsync = ref.watch(personBalanceProvider(person.uuid));
     final currency = ref.watch(currencySymbolProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Generate dynamic colored avatar background
+    final colors = [
+      Colors.teal,
+      Colors.blue,
+      Colors.indigo,
+      Colors.purple,
+      Colors.pink,
+      Colors.orange,
+    ];
+    final colorIndex =
+        person.name.codeUnits.fold<int>(
+          0,
+          (int prev, int element) => prev + element,
+        ) %
+        colors.length;
+    final avatarColor = colors[colorIndex];
 
     return Semantics(
       label: 'Contact: ${person.name}',
       child: Card(
-        margin: const EdgeInsets.only(bottom: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.only(bottom: 10),
         child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
+          ),
           onTap: () => context.push('/people/${person.uuid}'),
-          leading: Semantics(
-            label: 'Avatar for ${person.name}',
-            child: CircleAvatar(
-              backgroundColor: Colors.teal[50],
-              child: Text(
-                person.name.substring(0, 1).toUpperCase(),
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.teal),
-              ),
+          leading: CircleAvatar(
+            backgroundColor: avatarColor.withValues(alpha: 0.1),
+            child: Text(
+              person.name.substring(0, 1).toUpperCase(),
+              style: TextStyle(fontWeight: FontWeight.bold, color: avatarColor),
             ),
           ),
           title: Text(
             person.name,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
-          subtitle: Text(person.phone ?? 'No phone number'),
+          subtitle: Text(
+            person.phone ?? 'No phone number',
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+            ),
+          ),
           trailing: balanceAsync.when(
-            // ── Show shimmer/loading state inline ───────────────────────
             loading: () => const SizedBox(
-              width: 60,
+              width: 50,
               child: LinearProgressIndicator(
                 backgroundColor: Colors.transparent,
-                color: Colors.teal,
+                color: AppDesign.primaryEmerald,
                 minHeight: 2,
               ),
             ),
-            // ── Error state: show dash instead of crashing ───────────────
             error: (_, __) => Text(
               '—',
               style: TextStyle(color: Colors.grey[400], fontSize: 13),
             ),
-            // ── Resolved: show balance label ─────────────────────────────
             data: (balance) {
-              final color = balance > 0
-                  ? Colors.green[700]
-                  : balance < 0
-                      ? Colors.red[700]
-                      : Colors.grey[600];
-              final prefix = BalanceCalculator.getListPrefix(balance, currency);
-              final amount = BalanceCalculator.getDisplayAmount(balance);
-
-              return Semantics(
-                label: balance == 0.0
-                    ? 'Settled'
-                    : '$prefix$amount',
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      prefix + amount,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              if (balance > 0) {
+                return StatusBadge(
+                  label: 'Receivable: $currency ${balance.toStringAsFixed(0)}',
+                  color: AppDesign.greenReceivable,
+                );
+              } else if (balance < 0) {
+                return StatusBadge(
+                  label:
+                      'Payable: $currency ${balance.abs().toStringAsFixed(0)}',
+                  color: AppDesign.redPayable,
+                );
+              } else {
+                return const StatusBadge(
+                  label: 'Settled',
+                  color: AppDesign.grayNeutral,
+                );
+              }
             },
           ),
         ),

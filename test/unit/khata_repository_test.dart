@@ -26,8 +26,9 @@ void main() {
 
   group('KhataRepository Tests', () {
     test('getKhatas returns active khatas', () async {
-      when(() => mockRepo.getKhatas(includeDeleted: false))
-          .thenAnswer((_) async => [testKhata]);
+      when(
+        () => mockRepo.getKhatas(includeDeleted: false),
+      ).thenAnswer((_) async => [testKhata]);
 
       final result = await mockRepo.getKhatas(includeDeleted: false);
       expect(result.length, 1);
@@ -36,17 +37,27 @@ void main() {
     });
 
     test('getKhatasForPerson returns khatas filtered by person', () async {
-      when(() => mockRepo.getKhatasForPerson('person-uuid-1', includeDeleted: false))
-          .thenAnswer((_) async => [testKhata]);
+      when(
+        () =>
+            mockRepo.getKhatasForPerson('person-uuid-1', includeDeleted: false),
+      ).thenAnswer((_) async => [testKhata]);
 
-      final result = await mockRepo.getKhatasForPerson('person-uuid-1', includeDeleted: false);
+      final result = await mockRepo.getKhatasForPerson(
+        'person-uuid-1',
+        includeDeleted: false,
+      );
       expect(result.length, 1);
       expect(result.first.personUuid, 'person-uuid-1');
-      verify(() => mockRepo.getKhatasForPerson('person-uuid-1', includeDeleted: false)).called(1);
+      verify(
+        () =>
+            mockRepo.getKhatasForPerson('person-uuid-1', includeDeleted: false),
+      ).called(1);
     });
 
     test('getKhata returns correct khata', () async {
-      when(() => mockRepo.getKhata('khata-uuid-1')).thenAnswer((_) async => testKhata);
+      when(
+        () => mockRepo.getKhata('khata-uuid-1'),
+      ).thenAnswer((_) async => testKhata);
 
       final result = await mockRepo.getKhata('khata-uuid-1');
       expect(result, isNotNull);
@@ -62,14 +73,18 @@ void main() {
     });
 
     test('deleteKhata soft deletes the khata', () async {
-      when(() => mockRepo.deleteKhata('khata-uuid-1')).thenAnswer((_) async => {});
+      when(
+        () => mockRepo.deleteKhata('khata-uuid-1'),
+      ).thenAnswer((_) async => {});
 
       await mockRepo.deleteKhata('khata-uuid-1');
       verify(() => mockRepo.deleteKhata('khata-uuid-1')).called(1);
     });
 
     test('permanentlyDeleteKhata hard deletes the khata', () async {
-      when(() => mockRepo.permanentlyDeleteKhata('khata-uuid-1')).thenAnswer((_) async => {});
+      when(
+        () => mockRepo.permanentlyDeleteKhata('khata-uuid-1'),
+      ).thenAnswer((_) async => {});
 
       await mockRepo.permanentlyDeleteKhata('khata-uuid-1');
       verify(() => mockRepo.permanentlyDeleteKhata('khata-uuid-1')).called(1);

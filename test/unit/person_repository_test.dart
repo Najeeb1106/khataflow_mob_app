@@ -25,18 +25,24 @@ void main() {
   });
 
   group('PersonRepository Tests', () {
-    test('getPeople returns active persons when includeDeleted is false', () async {
-      when(() => mockRepo.getPeople(includeDeleted: false))
-          .thenAnswer((_) async => [testPerson]);
+    test(
+      'getPeople returns active persons when includeDeleted is false',
+      () async {
+        when(
+          () => mockRepo.getPeople(includeDeleted: false),
+        ).thenAnswer((_) async => [testPerson]);
 
-      final result = await mockRepo.getPeople(includeDeleted: false);
-      expect(result.length, 1);
-      expect(result.first.name, 'Alice Smith');
-      verify(() => mockRepo.getPeople(includeDeleted: false)).called(1);
-    });
+        final result = await mockRepo.getPeople(includeDeleted: false);
+        expect(result.length, 1);
+        expect(result.first.name, 'Alice Smith');
+        verify(() => mockRepo.getPeople(includeDeleted: false)).called(1);
+      },
+    );
 
     test('getPerson returns the correct person', () async {
-      when(() => mockRepo.getPerson('test-uuid-1')).thenAnswer((_) async => testPerson);
+      when(
+        () => mockRepo.getPerson('test-uuid-1'),
+      ).thenAnswer((_) async => testPerson);
 
       final result = await mockRepo.getPerson('test-uuid-1');
       expect(result, isNotNull);
@@ -52,14 +58,18 @@ void main() {
     });
 
     test('deletePerson soft deletes the person', () async {
-      when(() => mockRepo.deletePerson('test-uuid-1')).thenAnswer((_) async => {});
+      when(
+        () => mockRepo.deletePerson('test-uuid-1'),
+      ).thenAnswer((_) async => {});
 
       await mockRepo.deletePerson('test-uuid-1');
       verify(() => mockRepo.deletePerson('test-uuid-1')).called(1);
     });
 
     test('permanentlyDeletePerson hard deletes the person', () async {
-      when(() => mockRepo.permanentlyDeletePerson('test-uuid-1')).thenAnswer((_) async => {});
+      when(
+        () => mockRepo.permanentlyDeletePerson('test-uuid-1'),
+      ).thenAnswer((_) async => {});
 
       await mockRepo.permanentlyDeletePerson('test-uuid-1');
       verify(() => mockRepo.permanentlyDeletePerson('test-uuid-1')).called(1);
