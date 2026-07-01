@@ -402,6 +402,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                                     child: Card(
                                       margin: const EdgeInsets.only(bottom: 8),
                                       child: ListTile(
+                                        dense: true,
                                         onTap: () => context.push(
                                           '/khata/${khata.uuid}',
                                         ),

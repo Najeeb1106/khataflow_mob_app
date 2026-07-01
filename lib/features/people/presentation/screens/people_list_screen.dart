@@ -205,9 +205,10 @@ class _PersonListItem extends ConsumerWidget {
       child: Card(
         margin: const EdgeInsets.only(bottom: 10),
         child: ListTile(
+          dense: true,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 4,
+            horizontal: 12,
+            vertical: 2,
           ),
           onTap: () => context.push('/people/${person.uuid}'),
           leading: CircleAvatar(

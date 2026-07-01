@@ -592,7 +592,7 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
                               Positioned(
                                 top: 0,
                                 bottom: 0,
-                                left: 24,
+                                left: 20,
                                 child: Container(
                                   width: 2,
                                   color: AppDesign.primaryTeal.withValues(
@@ -602,8 +602,8 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
                               ),
                               // Timeline node dot
                               Positioned(
-                                top: 24,
-                                left: 19,
+                                top: 20,
+                                left: 15,
                                 child: Container(
                                   width: 12,
                                   height: 12,
@@ -627,16 +627,16 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
                               // Transaction Card details
                               Padding(
                                 padding: const EdgeInsets.only(
-                                  left: 44,
-                                  right: 16,
-                                  bottom: 8,
+                                  left: 36,
+                                  right: 8,
+                                  bottom: 6,
                                 ),
                                 child: Card(
                                   margin: EdgeInsets.zero,
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
+                                      horizontal: 12,
+                                      vertical: 8,
                                     ),
                                     child: Column(
                                       crossAxisAlignment:

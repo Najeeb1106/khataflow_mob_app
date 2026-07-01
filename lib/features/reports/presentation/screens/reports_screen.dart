@@ -190,6 +190,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       child: Column(
                         children: [
                           ListTile(
+                            dense: true,
                             leading: CircleAvatar(
                               backgroundColor: AppDesign.primaryEmerald
                                   .withValues(alpha: 0.1),
@@ -285,6 +286,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 10),
                   child: ListTile(
+                    dense: true,
                     title: Text(
                       person.name,
                       style: const TextStyle(fontWeight: FontWeight.bold),
@@ -341,6 +343,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         vertical: 6,
                       ),
                       child: ListTile(
+                        dense: true,
                         leading: CircleAvatar(
                           backgroundColor:
                               (isOverdue
@@ -681,6 +684,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     return Card(
                       margin: const EdgeInsets.only(bottom: 10),
                       child: ListTile(
+                        dense: true,
                         leading: CircleAvatar(
                           backgroundColor: Colors.blue.withValues(alpha: 0.1),
                           child: const Icon(
@@ -748,6 +752,7 @@ class _PersonKhatasView extends ConsumerWidget {
               children: [
                 if (index > 0) const Divider(height: 1, indent: 16),
                 ListTile(
+                  dense: true,
                   title: Text(
                     khata.title,
                     style: const TextStyle(fontWeight: FontWeight.w600),
