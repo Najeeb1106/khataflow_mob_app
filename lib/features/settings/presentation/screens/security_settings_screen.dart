@@ -325,7 +325,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       color: AppDesign.primaryEmerald,
                     ),
                     activeColor: AppDesign.primaryEmerald,
-                    title: const Text('Fingerprint & Face Unlock'),
+                    title: const Text('Fingerprint Unlock'),
                     subtitle: const Text(
                       'Unlock using registered device biometrics',
                     ),
