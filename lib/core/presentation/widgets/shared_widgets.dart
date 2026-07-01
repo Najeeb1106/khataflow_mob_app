@@ -386,16 +386,14 @@ class AppSnackbar {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        behavior: SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.fixed,
         backgroundColor: isDark ? AppDesign.darkCard : Colors.white,
-        margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: AppDesign.borderMedium,
-          side: BorderSide(color: color.withValues(alpha: 0.4), width: 1.2),
+        shape: Border(
+          top: BorderSide(color: color.withValues(alpha: 0.4), width: 1.2),
         ),
         elevation: 6,
         duration: const Duration(seconds: 3),
