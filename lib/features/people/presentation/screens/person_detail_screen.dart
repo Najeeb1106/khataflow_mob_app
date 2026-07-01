@@ -144,186 +144,187 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         color: AppDesign.primaryEmerald,
-        child: Column(
-          children: [
-            // Net Balance Header Card
-            ref
-                .watch(personFinancialSummaryProvider(widget.personUuid))
-                .when(
-                  loading: () => const LinearProgressIndicator(
-                    minHeight: 3,
-                    color: AppDesign.primaryEmerald,
-                  ),
-                  error: (err, _) => Center(child: Text('Error: $err')),
-                  data: (summary) {
-                    final isPositive = summary.netBalance > 0;
-                    final isNegative = summary.netBalance < 0;
-                    final netColor = isPositive
-                        ? AppDesign.greenReceivable
-                        : isNegative
-                        ? AppDesign.redPayable
-                        : AppDesign.grayNeutral;
-                    final statusLabel = BalanceCalculator.getStatusLabel(
-                      summary.netBalance,
-                    );
-
-                    return Semantics(
-                      label:
-                          'Financial Summary for ${_person!.name}, balance is ${BalanceCalculator.formatPkr(summary.netBalance, currency)}',
-                      child: Card(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: AppDesign.space16,
-                          vertical: AppDesign.space12,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppDesign.space20),
-                          child: Column(
-                            children: [
-                              Text(
-                                statusLabel.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isDark
-                                      ? Colors.grey.shade400
-                                      : AppDesign.primaryTeal,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.2,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // Net Balance Header Card
+              ref
+                  .watch(personFinancialSummaryProvider(widget.personUuid))
+                  .when(
+                    loading: () => const LinearProgressIndicator(
+                      minHeight: 3,
+                      color: AppDesign.primaryEmerald,
+                    ),
+                    error: (err, _) => Center(child: Text('Error: $err')),
+                    data: (summary) {
+                      final isPositive = summary.netBalance > 0;
+                      final isNegative = summary.netBalance < 0;
+                      final netColor = isPositive
+                          ? AppDesign.greenReceivable
+                          : isNegative
+                          ? AppDesign.redPayable
+                          : AppDesign.grayNeutral;
+                      final statusLabel = BalanceCalculator.getStatusLabel(
+                        summary.netBalance,
+                      );
+  
+                      return Semantics(
+                        label:
+                            'Financial Summary for ${_person!.name}, balance is ${BalanceCalculator.formatPkr(summary.netBalance, currency)}',
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: AppDesign.space16,
+                            vertical: AppDesign.space12,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppDesign.space20),
+                            child: Column(
+                              children: [
+                                Text(
+                                  statusLabel.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark
+                                        ? Colors.grey.shade400
+                                        : AppDesign.primaryTeal,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                BalanceCalculator.formatPkr(
-                                  summary.netBalance,
-                                  currency,
+                                const SizedBox(height: 4),
+                                Text(
+                                  BalanceCalculator.formatPkr(
+                                    summary.netBalance,
+                                    currency,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w800,
+                                    color: netColor,
+                                    letterSpacing: -1,
+                                  ),
                                 ),
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w800,
-                                  color: netColor,
-                                  letterSpacing: -1,
+                                const SizedBox(height: 16),
+                                const Divider(),
+                                const SizedBox(height: 12),
+  
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildSummaryItem(
+                                        'Total Lent',
+                                        BalanceCalculator.formatPkr(
+                                          summary.totalGiven,
+                                          currency,
+                                        ),
+                                        AppDesign.greenReceivable,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: _buildSummaryItem(
+                                        'Total Received',
+                                        BalanceCalculator.formatPkr(
+                                          summary.totalReceived,
+                                          currency,
+                                        ),
+                                        AppDesign.redPayable,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(height: 16),
-                              const Divider(),
-                              const SizedBox(height: 12),
-
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildSummaryItem(
-                                      'Total Lent',
-                                      BalanceCalculator.formatPkr(
-                                        summary.totalGiven,
-                                        currency,
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildSummaryItem(
+                                        'Total Borrowed',
+                                        BalanceCalculator.formatPkr(
+                                          summary.totalBorrowed,
+                                          currency,
+                                        ),
+                                        AppDesign.amberWarning,
                                       ),
-                                      AppDesign.greenReceivable,
                                     ),
-                                  ),
-                                  Expanded(
-                                    child: _buildSummaryItem(
-                                      'Total Received',
-                                      BalanceCalculator.formatPkr(
-                                        summary.totalReceived,
-                                        currency,
+                                    Expanded(
+                                      child: _buildSummaryItem(
+                                        'Total Repaid',
+                                        BalanceCalculator.formatPkr(
+                                          summary.totalPaid,
+                                          currency,
+                                        ),
+                                        AppDesign.primaryTeal,
                                       ),
-                                      AppDesign.redPayable,
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildSummaryItem(
-                                      'Total Borrowed',
-                                      BalanceCalculator.formatPkr(
-                                        summary.totalBorrowed,
-                                        currency,
-                                      ),
-                                      AppDesign.amberWarning,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: _buildSummaryItem(
-                                      'Total Repaid',
-                                      BalanceCalculator.formatPkr(
-                                        summary.totalPaid,
-                                        currency,
-                                      ),
-                                      AppDesign.primaryTeal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
+  
+              // Metadata summary card (Customer Since, Avg Transaction, Last Tx)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: AppDesign.space16),
+                padding: const EdgeInsets.all(AppDesign.space16),
+                decoration: BoxDecoration(
+                  color: isDark ? AppDesign.darkCard : Colors.white,
+                  borderRadius: AppDesign.borderMedium,
+                  border: Border.all(
+                    color: isDark ? AppDesign.darkBorder : AppDesign.lightBorder,
+                  ),
                 ),
-
-            // Metadata summary card (Customer Since, Avg Transaction, Last Tx)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: AppDesign.space16),
-              padding: const EdgeInsets.all(AppDesign.space16),
-              decoration: BoxDecoration(
-                color: isDark ? AppDesign.darkCard : Colors.white,
-                borderRadius: AppDesign.borderMedium,
-                border: Border.all(
-                  color: isDark ? AppDesign.darkBorder : AppDesign.lightBorder,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildMetaLabel('Contact Created'),
+                        _buildMetaValue(
+                          '${_getMonthName(_person!.createdAt)} ${_person!.createdAt.year}',
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildMetaLabel('Last Transaction'),
+                        _buildMetaValue(
+                          _lastTransactionDate != null
+                              ? '${_lastTransactionDate!.day} ${_getMonthName(_lastTransactionDate!)} ${_lastTransactionDate!.year}'
+                              : 'No transactions',
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildMetaLabel('Average Transaction'),
+                        _buildMetaValue(
+                          '$currency ${_averageTransactionSize.toStringAsFixed(0)}',
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildMetaLabel('Customer Since'),
-                      _buildMetaValue(
-                        '${_getMonthName(_person!.createdAt)} ${_person!.createdAt.year}',
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildMetaLabel('Last Transaction'),
-                      _buildMetaValue(
-                        _lastTransactionDate != null
-                            ? '${_lastTransactionDate!.day} ${_getMonthName(_lastTransactionDate!)} ${_lastTransactionDate!.year}'
-                            : 'No transactions',
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildMetaLabel('Average Transaction'),
-                      _buildMetaValue(
-                        '$currency ${_averageTransactionSize.toStringAsFixed(0)}',
-                      ),
-                    ],
-                  ),
-                ],
+  
+              const SizedBox(height: AppDesign.space12),
+  
+              // Quick Actions Row
+              khatasState.when(
+                data: (khatas) => _buildQuickActionsSection(context, khatas),
+                loading: () => const SizedBox(),
+                error: (_, __) => const SizedBox(),
               ),
-            ),
-
-            const SizedBox(height: AppDesign.space12),
-
-            // Quick Actions Row
-            khatasState.when(
-              data: (khatas) => _buildQuickActionsSection(context, khatas),
-              loading: () => const SizedBox(),
-              error: (_, __) => const SizedBox(),
-            ),
-
-            // Khatas Section
-            Expanded(
-              child: Padding(
+  
+              // Khatas Section
+              Padding(
                 padding: const EdgeInsets.all(AppDesign.space16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,113 +353,113 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: AppDesign.space8),
-                    Expanded(
-                      child: khatasState.when(
-                        data: (khatas) {
-                          if (khatas.isEmpty) {
-                            return EmptyState(
-                              icon: '📂',
-                              title: 'No accounts added',
-                              subtitle:
-                                  'Create a Khata to log transactions for this contact.',
-                              action: AppButton(
-                                label: 'Create a Khata',
-                                icon: Icons.add_rounded,
-                                onPressed: () => context.push(
-                                  '/people/${_person!.uuid}/khata/add',
-                                ),
+                    khatasState.when(
+                      data: (khatas) {
+                        if (khatas.isEmpty) {
+                          return EmptyState(
+                            icon: '📂',
+                            title: 'No accounts added',
+                            subtitle:
+                                'Create a Khata to log transactions for this contact.',
+                            action: AppButton(
+                              label: 'Create a Khata',
+                              icon: Icons.add_rounded,
+                              onPressed: () => context.push(
+                                '/people/${_person!.uuid}/khata/add',
                               ),
+                            ),
+                          );
+                        }
+  
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: khatas.length,
+                          itemBuilder: (context, index) {
+                            final khata = khatas[index];
+                            final khataBalanceAsync = ref.watch(
+                              khataBalanceProvider(khata.uuid),
                             );
-                          }
-
-                          return ListView.builder(
-                            itemCount: khatas.length,
-                            itemBuilder: (context, index) {
-                              final khata = khatas[index];
-                              final khataBalanceAsync = ref.watch(
-                                khataBalanceProvider(khata.uuid),
-                              );
-
-                              return khataBalanceAsync.when(
-                                loading: () => Card(
-                                  margin: const EdgeInsets.only(bottom: 8),
-                                  child: const ListTile(
-                                    title: LinearProgressIndicator(
-                                      minHeight: 2,
-                                      color: AppDesign.primaryEmerald,
-                                    ),
+  
+                            return khataBalanceAsync.when(
+                              loading: () => Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                child: const ListTile(
+                                  title: LinearProgressIndicator(
+                                    minHeight: 2,
+                                    color: AppDesign.primaryEmerald,
                                   ),
                                 ),
-                                error: (_, __) => const SizedBox(),
-                                data: (bal) {
-                                  final isOwed = bal >= 0;
-                                  final color = isOwed
-                                      ? AppDesign.greenReceivable
-                                      : AppDesign.redPayable;
-
-                                  return Semantics(
-                                    label:
-                                        'Khata: ${khata.title}, balance $currency ${bal.abs().toStringAsFixed(0)}',
-                                    child: Card(
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      child: ListTile(
-                                        dense: true,
-                                        onTap: () => context.push(
-                                          '/khata/${khata.uuid}',
-                                        ),
-                                        title: Text(
-                                          khata.title,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        subtitle: khata.notes != null
-                                            ? Text(
-                                                khata.notes!,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              )
-                                            : null,
-                                        trailing: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              '$currency ${bal.abs().toStringAsFixed(0)}',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: color,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            const Icon(
-                                              Icons.arrow_forward_ios_rounded,
-                                              size: 14,
-                                              color: Colors.grey,
-                                            ),
-                                          ],
+                              ),
+                              error: (_, __) => const SizedBox(),
+                              data: (bal) {
+                                final isOwed = bal >= 0;
+                                final color = isOwed
+                                    ? AppDesign.greenReceivable
+                                    : AppDesign.redPayable;
+  
+                                return Semantics(
+                                  label:
+                                      'Khata: ${khata.title}, balance $currency ${bal.abs().toStringAsFixed(0)}',
+                                  child: Card(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: ListTile(
+                                      dense: true,
+                                      onTap: () => context.push(
+                                        '/khata/${khata.uuid}',
+                                      ),
+                                      title: Text(
+                                        khata.title,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
+                                      subtitle: khata.notes != null
+                                          ? Text(
+                                              khata.notes!,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            )
+                                          : null,
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '$currency ${bal.abs().toStringAsFixed(0)}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: color,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          const Icon(
+                                            Icons.arrow_forward_ios_rounded,
+                                            size: 14,
+                                            color: Colors.grey,
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  );
-                                },
-                              );
-                            },
-                          );
-                        },
-                        loading: () => const Center(
-                          child: CircularProgressIndicator(
-                            color: AppDesign.primaryEmerald,
-                          ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(
+                          color: AppDesign.primaryEmerald,
                         ),
-                        error: (err, _) =>
-                            Center(child: Text('Error loading accounts: $err')),
                       ),
+                      error: (err, _) =>
+                          Center(child: Text('Error loading accounts: $err')),
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
