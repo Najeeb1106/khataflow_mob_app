@@ -174,17 +174,17 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                             'Financial Summary for ${_person!.name}, balance is ${BalanceCalculator.formatPkr(summary.netBalance, currency)}',
                         child: Card(
                           margin: const EdgeInsets.symmetric(
-                            horizontal: AppDesign.space16,
-                            vertical: AppDesign.space12,
+                            horizontal: AppDesign.space12,
+                            vertical: AppDesign.space8,
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.all(AppDesign.space20),
+                            padding: const EdgeInsets.all(AppDesign.space12),
                             child: Column(
                               children: [
                                 Text(
                                   statusLabel.toUpperCase(),
                                   style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 10,
                                     color: isDark
                                         ? Colors.grey.shade400
                                         : AppDesign.primaryTeal,
@@ -192,22 +192,22 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                                     letterSpacing: 1.2,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 2),
                                 Text(
                                   BalanceCalculator.formatPkr(
                                     summary.netBalance,
                                     currency,
                                   ),
                                   style: TextStyle(
-                                    fontSize: 32,
+                                    fontSize: 24,
                                     fontWeight: FontWeight.w800,
                                     color: netColor,
                                     letterSpacing: -1,
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 8),
                                 const Divider(),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 6),
   
                                 Row(
                                   children: [
@@ -233,7 +233,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 6),
                                 Row(
                                   children: [
                                     Expanded(
@@ -268,8 +268,8 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
   
               // Metadata summary card (Customer Since, Avg Transaction, Last Tx)
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: AppDesign.space16),
-                padding: const EdgeInsets.all(AppDesign.space16),
+                margin: const EdgeInsets.symmetric(horizontal: AppDesign.space12),
+                padding: const EdgeInsets.all(10.0),
                 decoration: BoxDecoration(
                   color: isDark ? AppDesign.darkCard : Colors.white,
                   borderRadius: AppDesign.borderMedium,
@@ -288,7 +288,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                         ),
                       ],
                     ),
-                    const Divider(height: 16),
+                    const Divider(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -300,7 +300,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                         ),
                       ],
                     ),
-                    const Divider(height: 16),
+                    const Divider(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -314,7 +314,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                 ),
               ),
   
-              const SizedBox(height: AppDesign.space12),
+              const SizedBox(height: AppDesign.space8),
   
               // Quick Actions Row
               khatasState.when(
@@ -325,7 +325,10 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
   
               // Khatas Section
               Padding(
-                padding: const EdgeInsets.all(AppDesign.space16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDesign.space12,
+                  vertical: AppDesign.space8,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -335,16 +338,17 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                         const Text(
                           'Accounts / Khatas',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         TextButton.icon(
-                          icon: const Icon(Icons.add_rounded, size: 18),
-                          label: const Text('New Khata'),
+                          icon: const Icon(Icons.add_rounded, size: 16),
+                          label: const Text('New Khata', style: TextStyle(fontSize: 12)),
                           style: TextButton.styleFrom(
                             foregroundColor: AppDesign.primaryEmerald,
-                            minimumSize: const Size(48, 48), // tap target size
+                            minimumSize: const Size(44, 32), // tap target size
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           ),
                           onPressed: () => context.push(
                             '/people/${_person!.uuid}/khata/add',
@@ -352,7 +356,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppDesign.space8),
+                    const SizedBox(height: AppDesign.space4),
                     khatasState.when(
                       data: (khatas) {
                         if (khatas.isEmpty) {
@@ -361,9 +365,11 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                             title: 'No accounts added',
                             subtitle:
                                 'Create a Khata to log transactions for this contact.',
+                            isCompact: true,
                             action: AppButton(
                               label: 'Create a Khata',
                               icon: Icons.add_rounded,
+                              isCompact: true,
                               onPressed: () => context.push(
                                 '/people/${_person!.uuid}/khata/add',
                               ),
@@ -470,7 +476,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
     return Text(
       text,
       style: TextStyle(
-        fontSize: 12,
+        fontSize: 11,
         color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
         fontWeight: FontWeight.w500,
       ),
@@ -480,7 +486,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
   Widget _buildMetaValue(String text) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
     );
   }
 
@@ -559,7 +565,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 10,
+            fontSize: 9,
             color: Colors.grey,
             fontWeight: FontWeight.bold,
           ),
@@ -568,7 +574,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
         Text(
           value,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: FontWeight.bold,
             color: color,
           ),
@@ -625,8 +631,8 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
   Widget _buildQuickActionsSection(BuildContext context, List<dynamic> khatas) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDesign.space16,
-        vertical: AppDesign.space8,
+        horizontal: AppDesign.space12,
+        vertical: AppDesign.space4,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -634,12 +640,12 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
           const Text(
             'Quick Actions',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.bold,
               color: Colors.grey,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -687,7 +693,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
   }) {
     return Expanded(
       child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
+        margin: const EdgeInsets.symmetric(horizontal: 2),
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: AppDesign.borderMedium,
@@ -698,17 +704,17 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
           onTap: onTap,
           borderRadius: AppDesign.borderMedium,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, color: color, size: 20),
-                const SizedBox(height: 4),
+                Icon(icon, color: color, size: 16),
+                const SizedBox(height: 2),
                 Text(
                   label,
                   style: TextStyle(
                     color: color,
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

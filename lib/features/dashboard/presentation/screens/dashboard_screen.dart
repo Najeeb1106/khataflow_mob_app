@@ -130,7 +130,8 @@ class DashboardScreen extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
       ),
-      body: RefreshIndicator(
+      body: SafeArea(
+        child: RefreshIndicator(
           color: AppDesign.primaryEmerald,
           onRefresh: () async {
             ref.invalidate(dashboardSummaryProvider);
@@ -141,8 +142,8 @@ class DashboardScreen extends ConsumerWidget {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(
-              horizontal: AppDesign.space20,
-              vertical: AppDesign.space16,
+              horizontal: AppDesign.space12,
+              vertical: AppDesign.space8,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +156,7 @@ class DashboardScreen extends ConsumerWidget {
                     return Text(
                       '${_getGreeting()}, $userName 👋',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: isDark
                             ? Colors.grey.shade400
                             : Colors.grey.shade600,
@@ -164,7 +165,7 @@ class DashboardScreen extends ConsumerWidget {
                     );
                   },
                 ),
-                const SizedBox(height: AppDesign.space12),
+                const SizedBox(height: 8),
 
                 summaryAsync.when(
                   data: (summary) {
@@ -226,7 +227,7 @@ class DashboardScreen extends ConsumerWidget {
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.all(
-                                    AppDesign.space24,
+                                    AppDesign.space16,
                                   ),
                                   child: Column(
                                     crossAxisAlignment:
@@ -235,7 +236,7 @@ class DashboardScreen extends ConsumerWidget {
                                       Text(
                                         'NET POSITION',
                                         style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 10,
                                           fontWeight: FontWeight.w700,
                                           color: Colors.white.withValues(
                                             alpha: 0.85,
@@ -243,21 +244,21 @@ class DashboardScreen extends ConsumerWidget {
                                           letterSpacing: 1.2,
                                         ),
                                       ),
-                                      const SizedBox(height: AppDesign.space8),
+                                      const SizedBox(height: 4),
                                       Text(
                                         '$currency ${summary.netPosition.abs().toStringAsFixed(0)}',
                                         style: const TextStyle(
-                                          fontSize: 34,
+                                          fontSize: 28,
                                           fontWeight: FontWeight.w800,
                                           color: Colors.white,
                                           letterSpacing: -1,
                                         ),
                                       ),
-                                      const SizedBox(height: AppDesign.space16),
+                                      const SizedBox(height: 10),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
+                                          horizontal: 10,
+                                          vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.white.withValues(
@@ -275,9 +276,9 @@ class DashboardScreen extends ConsumerWidget {
                                                   ? Icons.trending_up_rounded
                                                   : Icons.trending_down_rounded,
                                               color: Colors.white,
-                                              size: 16,
+                                              size: 14,
                                             ),
-                                            const SizedBox(width: 6),
+                                            const SizedBox(width: 4),
                                             Text(
                                               summary.netPosition > 0
                                                   ? 'Net Receivable'
@@ -285,7 +286,7 @@ class DashboardScreen extends ConsumerWidget {
                                                   ? 'Net Payable'
                                                   : 'Settled Balance',
                                               style: const TextStyle(
-                                                fontSize: 12,
+                                                fontSize: 11,
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w600,
                                               ),
@@ -300,7 +301,7 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(height: AppDesign.space20),
+                        const SizedBox(height: 10),
 
                         // Two Summary Cards
                         Row(
@@ -308,7 +309,7 @@ class DashboardScreen extends ConsumerWidget {
                             Expanded(
                               child: Container(
                                 padding: const EdgeInsets.all(
-                                  AppDesign.space16,
+                                  10.0,
                                 ),
                                 decoration: BoxDecoration(
                                   color: Colors.green.shade50.withValues(
@@ -327,18 +328,18 @@ class DashboardScreen extends ConsumerWidget {
                                     Text(
                                       'You Will Get',
                                       style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 10,
                                         color: isDark
                                             ? Colors.green.shade400
                                             : Colors.green.shade800,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 4),
                                     Text(
                                       '$currency ${summary.totalReceivable.toStringAsFixed(0)}',
                                       style: TextStyle(
-                                        fontSize: 18,
+                                        fontSize: 15,
                                         fontWeight: FontWeight.bold,
                                         color: isDark
                                             ? Colors.green.shade300
@@ -349,11 +350,11 @@ class DashboardScreen extends ConsumerWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Container(
                                 padding: const EdgeInsets.all(
-                                  AppDesign.space16,
+                                  10.0,
                                 ),
                                 decoration: BoxDecoration(
                                   color: Colors.red.shade50.withValues(
@@ -372,18 +373,18 @@ class DashboardScreen extends ConsumerWidget {
                                     Text(
                                       'You Will Give',
                                       style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 10,
                                         color: isDark
                                             ? Colors.red.shade400
                                             : Colors.red.shade800,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 4),
                                     Text(
                                       '$currency ${summary.totalPayable.toStringAsFixed(0)}',
                                       style: TextStyle(
-                                        fontSize: 18,
+                                        fontSize: 15,
                                         fontWeight: FontWeight.bold,
                                         color: isDark
                                             ? Colors.red.shade300
@@ -398,7 +399,7 @@ class DashboardScreen extends ConsumerWidget {
                         ),
 
                         // Cashflow Ratio Progress Bar
-                        const SizedBox(height: AppDesign.space20),
+                        const SizedBox(height: 10),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -408,7 +409,7 @@ class DashboardScreen extends ConsumerWidget {
                                 Text(
                                   'Receivables Ratio',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     color: isDark
                                         ? Colors.grey.shade400
                                         : Colors.grey.shade600,
@@ -418,7 +419,7 @@ class DashboardScreen extends ConsumerWidget {
                                 Text(
                                   '${(receivableRatio * 100).toStringAsFixed(0)}% vs ${(payableRatio * 100).toStringAsFixed(0)}%',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     color: isDark
                                         ? Colors.grey.shade300
                                         : Colors.grey.shade700,
@@ -427,11 +428,11 @@ class DashboardScreen extends ConsumerWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 4),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(10),
                               child: SizedBox(
-                                height: 8,
+                                height: 6,
                                 child: Row(
                                   children: [
                                     Expanded(
@@ -473,9 +474,9 @@ class DashboardScreen extends ConsumerWidget {
                 ),
 
                 // Due Statuses Section
-                const SizedBox(height: AppDesign.space24),
+                const SizedBox(height: 12),
                 const SectionHeader(title: 'Due Statuses'),
-                const SizedBox(height: AppDesign.space12),
+                const SizedBox(height: 6),
                 ref
                     .watch(dashboardDueStatsProvider)
                     .when(
@@ -510,9 +511,9 @@ class DashboardScreen extends ConsumerWidget {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 1.45,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: 1.6,
                           children: [
                             _buildDueStatusCard(
                               context,
@@ -591,9 +592,9 @@ class DashboardScreen extends ConsumerWidget {
                     ),
 
                 // Cash Flow Trends (Analytics Graph)
-                const SizedBox(height: AppDesign.space24),
+                const SizedBox(height: 12),
                 const SectionHeader(title: 'Monthly Cash Flow Trends'),
-                const SizedBox(height: AppDesign.space12),
+                const SizedBox(height: 6),
                 ref
                     .watch(dashboardMonthlyInsightsProvider)
                     .when(
@@ -633,11 +634,11 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.all(AppDesign.space16),
+                            padding: const EdgeInsets.all(10.0),
                             child: Column(
                               children: [
                                 SizedBox(
-                                  height: 180,
+                                  height: 140,
                                   child: BarChart(
                                     BarChartData(
                                       alignment: BarChartAlignment.spaceAround,
@@ -724,7 +725,7 @@ class DashboardScreen extends ConsumerWidget {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 8),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -777,15 +778,15 @@ class DashboardScreen extends ConsumerWidget {
                     ),
 
                 // Quick Actions Grid
-                const SizedBox(height: AppDesign.space24),
+                const SizedBox(height: 12),
                 const SectionHeader(title: 'Quick Actions'),
-                const SizedBox(height: AppDesign.space12),
+                const SizedBox(height: 6),
                 GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 4,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
                   children: [
                     _buildActionButton(
                       context,
@@ -815,9 +816,9 @@ class DashboardScreen extends ConsumerWidget {
                 ),
 
                 // Recent Activity Header
-                const SizedBox(height: AppDesign.space24),
+                const SizedBox(height: 12),
                 const SectionHeader(title: 'Recent Activity'),
-                const SizedBox(height: AppDesign.space12),
+                const SizedBox(height: 6),
 
                 recentAsync.when(
                   data: (recentList) {
@@ -826,9 +827,11 @@ class DashboardScreen extends ConsumerWidget {
                         icon: '💸',
                         title: 'No Transactions Yet',
                         subtitle: 'Start by adding your first transaction.',
+                        isCompact: true,
                         action: AppButton(
                           label: 'Add Transaction',
                           icon: Icons.add_rounded,
+                          isCompact: true,
                           onPressed: () =>
                               context.push('/transaction/quick-add'),
                         ),
@@ -850,29 +853,31 @@ class DashboardScreen extends ConsumerWidget {
                             : AppDesign.redPayable;
 
                         return Card(
-                          margin: const EdgeInsets.only(bottom: 10),
+                          margin: const EdgeInsets.only(bottom: 6),
                           child: ListTile(
+                            dense: true,
                             leading: CircleAvatar(
+                              radius: 16,
                               backgroundColor: color.withValues(alpha: 0.08),
                               child: Icon(
                                 isGaveOrPaid
                                     ? Icons.arrow_outward_rounded
                                     : Icons.call_received_rounded,
                                 color: color,
-                                size: 20,
+                                size: 16,
                               ),
                             ),
                             title: Text(
                               personName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: 13,
                               ),
                             ),
                             subtitle: Text(
                               '${tx.type.name.toUpperCase()} • ${item['khataTitle']} • ${_getRelativeDateString(tx.transactionDate ?? tx.createdAt)}',
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 10,
                                 color: isDark
                                     ? Colors.grey.shade400
                                     : Colors.grey.shade600,
@@ -883,7 +888,7 @@ class DashboardScreen extends ConsumerWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: color,
-                                fontSize: 14,
+                                fontSize: 13,
                               ),
                             ),
                           ),
@@ -902,6 +907,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ),
         ),
+      ),
     );
   }
 
@@ -928,12 +934,12 @@ class DashboardScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: AppDesign.primaryEmerald, size: 24),
-              const SizedBox(height: 6),
+              Icon(icon, color: AppDesign.primaryEmerald, size: 20),
+              const SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.grey.shade300 : AppDesign.primaryTeal,
                 ),

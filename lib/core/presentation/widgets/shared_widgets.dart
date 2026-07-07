@@ -7,6 +7,7 @@ class EmptyState extends StatelessWidget {
   final String title;
   final String subtitle;
   final Widget? action;
+  final bool isCompact;
 
   const EmptyState({
     super.key,
@@ -14,6 +15,7 @@ class EmptyState extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.action,
+    this.isCompact = false,
   });
 
   @override
@@ -21,33 +23,33 @@ class EmptyState extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppDesign.space24),
+        padding: EdgeInsets.all(isCompact ? AppDesign.space12 : AppDesign.space24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(icon, style: const TextStyle(fontSize: 64)),
-            const SizedBox(height: AppDesign.space16),
+            Text(icon, style: TextStyle(fontSize: isCompact ? 36 : 64)),
+            SizedBox(height: isCompact ? AppDesign.space8 : AppDesign.space16),
             Text(
               title,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: isCompact ? 14 : 18,
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : Colors.grey.shade800,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppDesign.space8),
+            SizedBox(height: isCompact ? 4 : AppDesign.space8),
             Text(
               subtitle,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: isCompact ? 11 : 13,
                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
               ),
               textAlign: TextAlign.center,
             ),
             if (action != null) ...[
-              const SizedBox(height: AppDesign.space20),
+              SizedBox(height: isCompact ? AppDesign.space12 : AppDesign.space20),
               action!,
             ],
           ],
@@ -92,6 +94,7 @@ class AppButton extends StatelessWidget {
   final Color? foregroundColor;
   final bool isFullWidth;
   final bool isSecondary;
+  final bool isCompact;
 
   const AppButton({
     super.key,
@@ -102,6 +105,7 @@ class AppButton extends StatelessWidget {
     this.foregroundColor,
     this.isFullWidth = false,
     this.isSecondary = false,
+    this.isCompact = false,
   });
 
   @override
@@ -115,12 +119,15 @@ class AppButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (icon != null) ...[
-          Icon(icon, size: 18),
-          const SizedBox(width: AppDesign.space8),
+          Icon(icon, size: isCompact ? 14 : 18),
+          SizedBox(width: isCompact ? 4 : AppDesign.space8),
         ],
         Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: isCompact ? 12 : 14,
+          ),
         ),
       ],
     );
@@ -132,9 +139,9 @@ class AppButton extends StatelessWidget {
               color: backgroundColor ?? AppDesign.primaryEmerald,
               width: 1.5,
             ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDesign.space20,
-              vertical: AppDesign.space12,
+            padding: EdgeInsets.symmetric(
+              horizontal: isCompact ? AppDesign.space12 : AppDesign.space20,
+              vertical: isCompact ? AppDesign.space8 : AppDesign.space12,
             ),
             shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
           )
@@ -142,9 +149,9 @@ class AppButton extends StatelessWidget {
             backgroundColor: primaryColor,
             foregroundColor: textCol,
             elevation: 0,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDesign.space20,
-              vertical: AppDesign.space12,
+            padding: EdgeInsets.symmetric(
+              horizontal: isCompact ? AppDesign.space12 : AppDesign.space20,
+              vertical: isCompact ? AppDesign.space8 : AppDesign.space12,
             ),
             shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
           );

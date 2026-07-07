@@ -30,12 +30,12 @@ class _QuickAddTransactionScreenState
   List<Khata> _khatas = [];
   TransactionType _selectedType = TransactionType.gave;
   bool _isLoadingKhatas = false;
-  DateTime _transactionDate = DateTime.now();
+  DateTime? _transactionDate;
 
   Future<void> _selectTransactionDate(BuildContext context) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _transactionDate,
+      initialDate: _transactionDate ?? DateTime.now(),
       firstDate: DateTime.now().subtract(const Duration(days: 365 * 10)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
     );
@@ -90,6 +90,12 @@ class _QuickAddTransactionScreenState
       );
       return;
     }
+    if (_transactionDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a transaction date')),
+      );
+      return;
+    }
 
     final tx = Transaction()
       ..uuid = const Uuid().v4()
@@ -138,316 +144,387 @@ class _QuickAddTransactionScreenState
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDesign.space24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Contact Select
-              const Text(
-                '1. Select Contact',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 8),
-              peopleAsync.when(
-                data: (people) {
-                  return Autocomplete<Person>(
-                    displayStringForOption: (option) => option.name,
-                    optionsBuilder: (textEditingValue) {
-                      if (textEditingValue.text.isEmpty) {
-                        return const Iterable<Person>.empty();
-                      }
-                      return people.where(
-                        (p) => p.name.toLowerCase().contains(
-                          textEditingValue.text.toLowerCase(),
-                        ),
-                      );
-                    },
-                    onSelected: _onPersonSelected,
-                    fieldViewBuilder:
-                        (context, controller, focusNode, onFieldSubmitted) {
-                          return TextFormField(
-                            controller: controller,
-                            focusNode: focusNode,
-                            decoration: InputDecoration(
-                              hintText: 'Type contact name...',
-                              prefixIcon: Icon(
-                                Icons.person_search_rounded,
-                                color: AppDesign.primaryEmerald,
-                              ),
-                              filled: true,
-                              fillColor: isDark
-                                  ? AppDesign.darkCard
-                                  : Colors.grey.shade50,
-                              border: OutlineInputBorder(
-                                borderRadius: AppDesign.borderMedium,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: AppDesign.borderMedium,
-                                borderSide: BorderSide(
-                                  color: isDark
-                                      ? AppDesign.darkBorder
-                                      : AppDesign.lightBorder,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: AppDesign.borderMedium,
-                                borderSide: const BorderSide(
-                                  color: AppDesign.primaryEmerald,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                            validator: (val) {
-                              if (_selectedPerson == null) {
-                                return 'Required: Please select a valid contact';
-                              }
-                              return null;
-                            },
-                          );
-                        },
-                  );
-                },
-                loading: () => const LinearProgressIndicator(
-                  color: AppDesign.primaryEmerald,
-                ),
-                error: (err, _) => Text('Error loading contacts: $err'),
-              ),
-              const SizedBox(height: 20),
-
-              // Select Khata
-              if (_selectedPerson != null) ...[
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDesign.space12,
+              vertical: AppDesign.space8,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Contact Select
                 const Text(
-                  '2. Select Account (Khata)',
+                  '1. Select Contact',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontSize: 12,
                     color: Colors.grey,
                   ),
                 ),
-                const SizedBox(height: 8),
-                if (_isLoadingKhatas)
-                  const CircularProgressIndicator(
+                const SizedBox(height: 4),
+                peopleAsync.when(
+                  data: (people) {
+                    return Autocomplete<Person>(
+                      displayStringForOption: (option) => option.name,
+                      optionsBuilder: (textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return const Iterable<Person>.empty();
+                        }
+                        return people.where(
+                          (p) => p.name.toLowerCase().contains(
+                            textEditingValue.text.toLowerCase(),
+                          ),
+                        );
+                      },
+                      onSelected: _onPersonSelected,
+                      fieldViewBuilder:
+                          (context, controller, focusNode, onFieldSubmitted) {
+                            return TextFormField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              decoration: InputDecoration(
+                                hintText: 'Type contact name...',
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                prefixIcon: Icon(
+                                  Icons.person_search_rounded,
+                                  color: AppDesign.primaryEmerald,
+                                  size: 18,
+                                ),
+                                filled: true,
+                                fillColor: isDark
+                                    ? AppDesign.darkCard
+                                    : Colors.grey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: AppDesign.borderMedium,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: AppDesign.borderMedium,
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? AppDesign.darkBorder
+                                        : AppDesign.lightBorder,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: AppDesign.borderMedium,
+                                  borderSide: const BorderSide(
+                                    color: AppDesign.primaryEmerald,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              validator: (val) {
+                                if (_selectedPerson == null) {
+                                  return 'Required: Please select a valid contact';
+                                }
+                                return null;
+                              },
+                            );
+                          },
+                    );
+                  },
+                  loading: () => const LinearProgressIndicator(
                     color: AppDesign.primaryEmerald,
-                  )
-                else if (_khatas.isEmpty)
-                  TextButton.icon(
-                    onPressed: () => context.push(
-                      '/people/${_selectedPerson!.uuid}/khata/add',
+                  ),
+                  error: (err, _) => Text('Error loading contacts: $err'),
+                ),
+                const SizedBox(height: 10),
+  
+                // Select Khata
+                if (_selectedPerson != null) ...[
+                  const Text(
+                    '2. Select Account (Khata)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.grey,
                     ),
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Create a Khata first'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppDesign.primaryEmerald,
-                    ),
-                  )
-                else
-                  DropdownButtonFormField<Khata>(
-                    value: _selectedKhata,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: isDark
-                          ? AppDesign.darkCard
-                          : Colors.grey.shade50,
-                      border: OutlineInputBorder(
-                        borderRadius: AppDesign.borderMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  if (_isLoadingKhatas)
+                    const CircularProgressIndicator(
+                      color: AppDesign.primaryEmerald,
+                    )
+                  else if (_khatas.isEmpty)
+                    TextButton.icon(
+                      onPressed: () async {
+                        final personUuid = _selectedPerson!.uuid;
+                        // Await navigation result containing the newly created Khata.
+                        // This allows immediate UI update without requiring screen reopen.
+                        final newKhata = await context.push<Khata>(
+                          '/people/$personUuid/khata/add',
+                        );
+                        
+                        if (!mounted) return;
+
+                        // Refresh/invalidate the Riverpod provider for this person's khatas
+                        // to ensure the overall application state remains in sync.
+                        ref.invalidate(khatasForPersonProvider(personUuid));
+
+                        setState(() {
+                          _isLoadingKhatas = true;
+                        });
+
+                        try {
+                          final repo = ref.read(khataRepositoryProvider);
+                          final list = await repo.getKhatasForPerson(personUuid);
+                          
+                          if (mounted) {
+                            setState(() {
+                              final Map<String, Khata> uniqueKhatas = {};
+                              
+                              // Populate with fresh database entries
+                              for (final k in list) {
+                                if (k.uuid.isNotEmpty) {
+                                  uniqueKhatas[k.uuid] = k;
+                                }
+                              }
+                              
+                              // If a new Khata was returned, ensure it's in the unique map
+                              if (newKhata != null && newKhata.uuid.isNotEmpty) {
+                                uniqueKhatas[newKhata.uuid] = newKhata;
+                              }
+                              
+                              // Replace the entire list with the deduplicated elements
+                              _khatas = uniqueKhatas.values.toList();
+                              
+                              // Auto-select the newly created Khata, or fallback to the single item if only one exists
+                              if (newKhata != null) {
+                                _selectedKhata = _khatas.firstWhere(
+                                  (k) => k.uuid == newKhata.uuid,
+                                  orElse: () => newKhata,
+                                );
+                              } else if (_khatas.length == 1) {
+                                _selectedKhata = _khatas.first;
+                              }
+                            });
+                          }
+                        } catch (_) {
+                          // Handle errors silently
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isLoadingKhatas = false;
+                            });
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.add_rounded, size: 16),
+                      label: const Text('Create a Khata first', style: TextStyle(fontSize: 12)),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppDesign.primaryEmerald,
+                        minimumSize: const Size(44, 32),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: AppDesign.borderMedium,
-                        borderSide: BorderSide(
-                          color: isDark
-                              ? AppDesign.darkBorder
-                              : AppDesign.lightBorder,
+                    )
+                  else
+                    DropdownButtonFormField<Khata>(
+                      value: _selectedKhata,
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        filled: true,
+                        fillColor: isDark
+                            ? AppDesign.darkCard
+                            : Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: AppDesign.borderMedium,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: AppDesign.borderMedium,
+                          borderSide: BorderSide(
+                            color: isDark
+                                ? AppDesign.darkBorder
+                                : AppDesign.lightBorder,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: AppDesign.borderMedium,
+                          borderSide: const BorderSide(
+                            color: AppDesign.primaryEmerald,
+                            width: 2,
+                          ),
                         ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: AppDesign.borderMedium,
-                        borderSide: const BorderSide(
-                          color: AppDesign.primaryEmerald,
-                          width: 2,
-                        ),
-                      ),
+                      items: _khatas.map((k) {
+                        return DropdownMenuItem(value: k, child: Text(k.title, style: const TextStyle(fontSize: 14)));
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedKhata = val;
+                        });
+                      },
+                      validator: (val) => val == null
+                          ? 'Required: Please select a Khata account'
+                          : null,
                     ),
-                    items: _khatas.map((k) {
-                      return DropdownMenuItem(value: k, child: Text(k.title));
-                    }).toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedKhata = val;
-                      });
-                    },
-                    validator: (val) => val == null
-                        ? 'Required: Please select a Khata account'
-                        : null,
-                  ),
-                const SizedBox(height: 20),
-              ],
-
-              // Amount textfield
-              const Text(
-                '3. Enter Amount',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 8),
-              AppTextField(
-                controller: _amountController,
-                labelText: 'Amount',
-                hintText: '0.00',
-                keyboardType: TextInputType.number,
-                prefixIcon: Icons.payments_rounded,
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty)
-                    return 'Required: Please enter amount';
-                  final num = double.tryParse(val.trim());
-                  if (num == null || num <= 0)
-                    return 'Required: Please enter a valid positive number';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-
-              // Transaction Type Buttons
-              const Text(
-                '4. Transaction Type',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 12),
-              GridView.count(
-                shrinkWrap: true,
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 2.3,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildTypeButton(
-                    TransactionType.gave,
-                    'GAVE (Lent)',
-                    AppDesign.greenReceivable,
-                  ),
-                  _buildTypeButton(
-                    TransactionType.received,
-                    'RECEIVED',
-                    AppDesign.redPayable,
-                  ),
-                  _buildTypeButton(
-                    TransactionType.borrowed,
-                    'BORROWED',
-                    AppDesign.amberWarning,
-                  ),
-                  _buildTypeButton(
-                    TransactionType.paid,
-                    'REPAID (Paid)',
-                    AppDesign.primaryTeal,
-                  ),
+                  const SizedBox(height: 10),
                 ],
-              ),
-              const SizedBox(height: 20),
-
-              // Transaction Date Selector
-              const Text(
-                '5. Transaction Date',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: () => _selectTransactionDate(context),
-                borderRadius: AppDesign.borderMedium,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
+  
+                // Amount textfield
+                const Text(
+                  '3. Enter Amount',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Colors.grey,
                   ),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppDesign.darkCard : Colors.white,
-                    border: Border.all(
-                      color: isDark
-                          ? AppDesign.darkBorder
-                          : AppDesign.lightBorder,
+                ),
+                const SizedBox(height: 4),
+                AppTextField(
+                  controller: _amountController,
+                  labelText: 'Amount',
+                  hintText: '0.00',
+                  keyboardType: TextInputType.number,
+                  prefixIcon: Icons.payments_rounded,
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty)
+                      return 'Required: Please enter amount';
+                    final num = double.tryParse(val.trim());
+                    if (num == null || num <= 0)
+                      return 'Required: Please enter a valid positive number';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 10),
+  
+                // Transaction Type Buttons
+                const Text(
+                  '4. Transaction Type',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                GridView.count(
+                  shrinkWrap: true,
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 2.8,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildTypeButton(
+                      TransactionType.gave,
+                      'GAVE (Lent)',
+                      AppDesign.greenReceivable,
                     ),
-                    borderRadius: AppDesign.borderMedium,
+                    _buildTypeButton(
+                      TransactionType.received,
+                      'RECEIVED',
+                      AppDesign.redPayable,
+                    ),
+                    _buildTypeButton(
+                      TransactionType.borrowed,
+                      'BORROWED',
+                      AppDesign.amberWarning,
+                    ),
+                    _buildTypeButton(
+                      TransactionType.paid,
+                      'REPAID (Paid)',
+                      AppDesign.primaryTeal,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+  
+                // Transaction Date Selector
+                const Text(
+                  '5. Transaction Date',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Colors.grey,
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_rounded,
-                        color: AppDesign.primaryEmerald,
-                        size: 20,
+                ),
+                const SizedBox(height: 4),
+                InkWell(
+                  onTap: () => _selectTransactionDate(context),
+                  borderRadius: AppDesign.borderMedium,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppDesign.darkCard : Colors.white,
+                      border: Border.all(
+                        color: isDark
+                            ? AppDesign.darkBorder
+                            : AppDesign.lightBorder,
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '${_transactionDate.day}/${_transactionDate.month}/${_transactionDate.year}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        'Change',
-                        style: TextStyle(
+                      borderRadius: AppDesign.borderMedium,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
                           color: AppDesign.primaryEmerald,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                          size: 16,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Text(
+                          _transactionDate == null
+                              ? 'Select Date (Required)'
+                              : '${_transactionDate!.day}/${_transactionDate!.month}/${_transactionDate!.year}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: _transactionDate == null ? Colors.redAccent : null,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Change',
+                          style: TextStyle(
+                            color: AppDesign.primaryEmerald,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(left: 4, top: 4),
-                child: Text(
-                  'The actual day money was exchanged.',
-                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                const Padding(
+                  padding: EdgeInsets.only(left: 4, top: 4),
+                  child: Text(
+                    'The actual day money was exchanged.',
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-
-              // Notes Remarks
-              const Text(
-                '6. Notes / Remarks (Optional)',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.grey,
+                const SizedBox(height: 10),
+  
+                // Notes Remarks
+                const Text(
+                  '6. Notes / Remarks (Optional)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              AppTextField(
-                controller: _notesController,
-                labelText: 'Notes',
-                hintText: 'Enter specific transaction details...',
-                prefixIcon: Icons.description_rounded,
-              ),
-              const SizedBox(height: 32),
-
-              AppButton(
-                label: 'Save Transaction',
-                onPressed: _save,
-                isFullWidth: true,
-                backgroundColor: AppDesign.primaryEmerald,
-              ),
-            ],
+                const SizedBox(height: 4),
+                AppTextField(
+                  controller: _notesController,
+                  labelText: 'Notes',
+                  hintText: 'Enter specific transaction details...',
+                  prefixIcon: Icons.description_rounded,
+                ),
+                const SizedBox(height: 16),
+  
+                AppButton(
+                  label: 'Save Transaction',
+                  onPressed: _save,
+                  isFullWidth: true,
+                  backgroundColor: AppDesign.primaryEmerald,
+                ),
+              ],
+            ),
           ),
         ),
       ),

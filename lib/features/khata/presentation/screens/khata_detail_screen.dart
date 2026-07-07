@@ -118,696 +118,651 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        color: AppDesign.primaryEmerald,
-        child: Column(
-          children: [
-            // Balance Summary Card
-            txsState.when(
-              data: (txs) {
-                final bal = BalanceCalculator.calculate(txs);
-                final color = bal >= 0
-                    ? AppDesign.greenReceivable
-                    : AppDesign.redPayable;
-                final label = BalanceCalculator.getLedgerLabel(bal);
-
-                double totalGiven = 0.0;
-                double totalReceived = 0.0;
-                double totalBorrowed = 0.0;
-                double totalPaid = 0.0;
-
-                for (final tx in txs) {
-                  if (tx.type == TransactionType.gave) totalGiven += tx.amount;
-                  if (tx.type == TransactionType.received)
-                    totalReceived += tx.amount;
-                  if (tx.type == TransactionType.borrowed)
-                    totalBorrowed += tx.amount;
-                  if (tx.type == TransactionType.paid) totalPaid += tx.amount;
-                }
-
-                Widget progressWidget = const SizedBox();
-                if (bal == 0.0) {
-                  progressWidget = const Padding(
-                    padding: EdgeInsets.only(top: 12.0),
-                    child: StatusBadge(
-                      label: 'Fully Settled',
-                      color: AppDesign.greenReceivable,
-                    ),
-                  );
-                } else if (bal > 0) {
-                  final totalRecovered = totalReceived;
-                  final totalTarget = totalGiven;
-                  final pct = totalTarget > 0
-                      ? (totalRecovered / totalTarget).clamp(0.0, 1.0)
-                      : 0.0;
-                  progressWidget = _buildProgressSection(
-                    'Loan Recovery Progress',
-                    'Recovered',
-                    BalanceCalculator.formatPkr(totalRecovered, currency),
-                    BalanceCalculator.formatPkr(totalTarget, currency),
-                    pct,
-                    AppDesign.greenReceivable,
-                  );
-                } else {
-                  final totalRepaid = totalPaid;
-                  final totalTarget = totalBorrowed;
-                  final pct = totalTarget > 0
-                      ? (totalRepaid / totalTarget).clamp(0.0, 1.0)
-                      : 0.0;
-                  progressWidget = _buildProgressSection(
-                    'Debt Repayment Progress',
-                    'Repaid',
-                    BalanceCalculator.formatPkr(totalRepaid, currency),
-                    BalanceCalculator.formatPkr(totalTarget, currency),
-                    pct,
-                    AppDesign.redPayable,
-                  );
-                }
-
-                return Semantics(
-                  label: '$label $currency ${bal.abs().toStringAsFixed(0)}',
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppDesign.darkCard
-                          : AppDesign.primaryEmerald.withValues(alpha: 0.04),
-                      border: Border(
-                        bottom: BorderSide(
-                          color: isDark
-                              ? AppDesign.darkBorder
-                              : AppDesign.lightBorder,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppDesign.primaryEmerald,
+          child: Column(
+            children: [
+              // Balance Summary Card
+              txsState.when(
+                data: (txs) {
+                  final bal = BalanceCalculator.calculate(txs);
+                  final color = bal >= 0
+                      ? AppDesign.greenReceivable
+                      : AppDesign.redPayable;
+                  final label = BalanceCalculator.getLedgerLabel(bal);
+  
+                  double totalGiven = 0.0;
+                  double totalReceived = 0.0;
+                  double totalBorrowed = 0.0;
+                  double totalPaid = 0.0;
+  
+                  for (final tx in txs) {
+                    if (tx.type == TransactionType.gave) totalGiven += tx.amount;
+                    if (tx.type == TransactionType.received)
+                      totalReceived += tx.amount;
+                    if (tx.type == TransactionType.borrowed)
+                      totalBorrowed += tx.amount;
+                    if (tx.type == TransactionType.paid) totalPaid += tx.amount;
+                  }
+  
+                  Widget progressWidget = const SizedBox();
+                  if (bal == 0.0) {
+                    progressWidget = const Padding(
+                      padding: EdgeInsets.only(top: 8.0),
+                      child: StatusBadge(
+                        label: 'Fully Settled',
+                        color: AppDesign.greenReceivable,
+                      ),
+                    );
+                  } else if (bal > 0) {
+                    final totalRecovered = totalReceived;
+                    final totalTarget = totalGiven;
+                    final pct = totalTarget > 0
+                        ? (totalRecovered / totalTarget).clamp(0.0, 1.0)
+                        : 0.0;
+                    progressWidget = _buildProgressSection(
+                      'Loan Recovery Progress',
+                      'Recovered',
+                      BalanceCalculator.formatPkr(totalRecovered, currency),
+                      BalanceCalculator.formatPkr(totalTarget, currency),
+                      pct,
+                      AppDesign.greenReceivable,
+                    );
+                  } else {
+                    final totalRepaid = totalPaid;
+                    final totalTarget = totalBorrowed;
+                    final pct = totalTarget > 0
+                        ? (totalRepaid / totalTarget).clamp(0.0, 1.0)
+                        : 0.0;
+                    progressWidget = _buildProgressSection(
+                      'Debt Repayment Progress',
+                      'Repaid',
+                      BalanceCalculator.formatPkr(totalRepaid, currency),
+                      BalanceCalculator.formatPkr(totalTarget, currency),
+                      pct,
+                      AppDesign.redPayable,
+                    );
+                  }
+  
+                  return Semantics(
+                    label: '$label $currency ${bal.abs().toStringAsFixed(0)}',
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppDesign.darkCard
+                            : AppDesign.primaryEmerald.withValues(alpha: 0.04),
+                        border: Border(
+                          bottom: BorderSide(
+                            color: isDark
+                                ? AppDesign.darkBorder
+                                : AppDesign.lightBorder,
+                          ),
                         ),
                       ),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 20,
-                      horizontal: 24,
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isDark
-                                ? Colors.grey.shade400
-                                : AppDesign.primaryTeal,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 16,
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isDark
+                                  ? Colors.grey.shade400
+                                  : AppDesign.primaryTeal,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          BalanceCalculator.formatPkr(bal, currency),
-                          style: TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w800,
-                            color: color,
-                            letterSpacing: -1,
+                          const SizedBox(height: 4),
+                          Text(
+                            BalanceCalculator.formatPkr(bal, currency),
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: color,
+                              letterSpacing: -1,
+                            ),
                           ),
-                        ),
-                        progressWidget,
-                      ],
+                          progressWidget,
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-              loading: () => const LinearProgressIndicator(
-                color: AppDesign.primaryEmerald,
-              ),
-              error: (_, __) => const SizedBox(),
-            ),
-
-            // Filter & Sort Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children:
-                          [
-                            'All',
-                            'Given',
-                            'Received',
-                            'Borrowed',
-                            'Paid',
-                            'Due Today',
-                            'Overdue',
-                            'Upcoming',
-                          ].map((filter) {
-                            final isSelected = _selectedFilter == filter;
-                            final Map<String, Color> bulletColors = {
-                              'Given': AppDesign.greenReceivable,
-                              'Received': AppDesign.redPayable,
-                              'Borrowed': AppDesign.amberWarning,
-                              'Paid': AppDesign.primaryTeal,
-                              'Due Today': AppDesign.amberWarning,
-                              'Overdue': AppDesign.redPayable,
-                              'Upcoming': Colors.blue,
-                            };
-                            final bulletColor = bulletColors[filter];
-
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: ChoiceChip(
-                                label: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (bulletColor != null) ...[
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          color: bulletColor,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                    ],
-                                    Text(
-                                      filter,
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                                  ],
-                                ),
-                                selected: isSelected,
-                                selectedColor: AppDesign.primaryEmerald,
-                                backgroundColor: isDark
-                                    ? AppDesign.darkCard
-                                    : Colors.grey[200],
-                                labelStyle: TextStyle(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : (isDark
-                                            ? Colors.grey.shade300
-                                            : Colors.black87),
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                onSelected: (val) {
-                                  if (val)
-                                    setState(() => _selectedFilter = filter);
-                                },
-                              ),
-                            );
-                          }).toList(),
-                    ),
-                  ),
+                  );
+                },
+                loading: () => const LinearProgressIndicator(
+                  color: AppDesign.primaryEmerald,
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: DropdownButton<String>(
-                    value: _selectedSort,
-                    icon: Icon(
-                      Icons.sort_rounded,
-                      color: AppDesign.primaryEmerald,
-                      size: 20,
+                error: (_, __) => const SizedBox(),
+              ),
+  
+              // Sort Row
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Transactions',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                      ),
                     ),
-                    underline: const SizedBox(),
-                    selectedItemBuilder: (BuildContext context) {
-                      return [
-                        'Transaction Date',
-                        'Due Date',
-                        'Amount',
-                        'Latest',
-                        'Oldest',
-                      ].map((_) => const SizedBox.shrink()).toList();
-                    },
-                    style: TextStyle(
-                      color: AppDesign.primaryEmerald,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                    items:
-                        [
+                    PopupMenuButton<String>(
+                      initialValue: _selectedSort,
+                      onSelected: (String val) {
+                        setState(() {
+                          _selectedSort = val;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppDesign.primaryEmerald.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                            color: AppDesign.primaryEmerald.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.sort_rounded,
+                              color: AppDesign.primaryEmerald,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _selectedSort,
+                              style: TextStyle(
+                                color: AppDesign.primaryEmerald,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              Icons.arrow_drop_down_rounded,
+                              color: AppDesign.primaryEmerald,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                      itemBuilder: (BuildContext context) {
+                        return [
                           'Transaction Date',
                           'Due Date',
                           'Amount',
                           'Latest',
                           'Oldest',
-                        ].map((sort) {
-                          return DropdownMenuItem(
-                            value: sort,
-                            child: Text(sort),
+                        ].map((String choice) {
+                          return PopupMenuItem<String>(
+                            value: choice,
+                            child: Text(
+                              choice,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: _selectedSort == choice
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: _selectedSort == choice
+                                    ? AppDesign.primaryEmerald
+                                    : null,
+                              ),
+                            ),
                           );
-                        }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _selectedSort = val);
-                      }
-                    },
-                  ),
+                        }).toList();
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
-
-            // Transaction List
-            Expanded(
-              child: txsState.when(
-                data: (txs) {
-                  // Apply filter
-                  var filtered = List<Transaction>.from(txs);
-                  if (_selectedFilter != 'All') {
-                    if (_selectedFilter == 'Given') {
-                      filtered = filtered
-                          .where((t) => t.type == TransactionType.gave)
-                          .toList();
-                    } else if (_selectedFilter == 'Received') {
-                      filtered = filtered
-                          .where((t) => t.type == TransactionType.received)
-                          .toList();
-                    } else if (_selectedFilter == 'Borrowed') {
-                      filtered = filtered
-                          .where((t) => t.type == TransactionType.borrowed)
-                          .toList();
-                    } else if (_selectedFilter == 'Paid') {
-                      filtered = filtered
-                          .where((t) => t.type == TransactionType.paid)
-                          .toList();
-                    } else if (_selectedFilter == 'Due Today') {
-                      final today = DateTime.now();
-                      filtered = filtered.where((t) {
-                        if (t.dueDate == null) return false;
-                        return t.dueDate!.year == today.year &&
-                            t.dueDate!.month == today.month &&
-                            t.dueDate!.day == today.day;
-                      }).toList();
-                    } else if (_selectedFilter == 'Overdue') {
-                      final today = DateTime(
-                        DateTime.now().year,
-                        DateTime.now().month,
-                        DateTime.now().day,
-                      );
-                      filtered = filtered.where((t) {
-                        if (t.dueDate == null) return false;
-                        if (t.type == TransactionType.received ||
-                            t.type == TransactionType.paid)
-                          return false;
-                        final due = DateTime(
-                          t.dueDate!.year,
-                          t.dueDate!.month,
-                          t.dueDate!.day,
+              ),
+  
+              // Transaction List
+              Expanded(
+                child: txsState.when(
+                  data: (txs) {
+                    // Apply filter
+                    var filtered = List<Transaction>.from(txs);
+                    if (_selectedFilter != 'All') {
+                      if (_selectedFilter == 'Given') {
+                        filtered = filtered
+                            .where((t) => t.type == TransactionType.gave)
+                            .toList();
+                      } else if (_selectedFilter == 'Received') {
+                        filtered = filtered
+                            .where((t) => t.type == TransactionType.received)
+                            .toList();
+                      } else if (_selectedFilter == 'Borrowed') {
+                        filtered = filtered
+                            .where((t) => t.type == TransactionType.borrowed)
+                            .toList();
+                      } else if (_selectedFilter == 'Paid') {
+                        filtered = filtered
+                            .where((t) => t.type == TransactionType.paid)
+                            .toList();
+                      } else if (_selectedFilter == 'Due Today') {
+                        final today = DateTime.now();
+                        filtered = filtered.where((t) {
+                          if (t.dueDate == null) return false;
+                          return t.dueDate!.year == today.year &&
+                              t.dueDate!.month == today.month &&
+                              t.dueDate!.day == today.day;
+                        }).toList();
+                      } else if (_selectedFilter == 'Overdue') {
+                        final today = DateTime(
+                          DateTime.now().year,
+                          DateTime.now().month,
+                          DateTime.now().day,
                         );
-                        return due.isBefore(today);
-                      }).toList();
-                    } else if (_selectedFilter == 'Upcoming') {
-                      final today = DateTime(
-                        DateTime.now().year,
-                        DateTime.now().month,
-                        DateTime.now().day,
-                      );
-                      filtered = filtered.where((t) {
-                        if (t.dueDate == null) return false;
-                        if (t.type == TransactionType.received ||
-                            t.type == TransactionType.paid)
-                          return false;
-                        final due = DateTime(
-                          t.dueDate!.year,
-                          t.dueDate!.month,
-                          t.dueDate!.day,
+                        filtered = filtered.where((t) {
+                          if (t.dueDate == null) return false;
+                          if (t.type == TransactionType.received ||
+                              t.type == TransactionType.paid)
+                            return false;
+                          final due = DateTime(
+                            t.dueDate!.year,
+                            t.dueDate!.month,
+                            t.dueDate!.day,
+                          );
+                          return due.isBefore(today);
+                        }).toList();
+                      } else if (_selectedFilter == 'Upcoming') {
+                        final today = DateTime(
+                          DateTime.now().year,
+                          DateTime.now().month,
+                          DateTime.now().day,
                         );
-                        return due.isAfter(today) ||
-                            due.isAtSameMomentAs(today);
-                      }).toList();
+                        filtered = filtered.where((t) {
+                          if (t.dueDate == null) return false;
+                          if (t.type == TransactionType.received ||
+                              t.type == TransactionType.paid)
+                            return false;
+                          final due = DateTime(
+                            t.dueDate!.year,
+                            t.dueDate!.month,
+                            t.dueDate!.day,
+                          );
+                          return due.isAfter(today) ||
+                              due.isAtSameMomentAs(today);
+                        }).toList();
+                      }
                     }
-                  }
-
-                  // Apply sorting
-                  if (_selectedSort == 'Transaction Date') {
-                    filtered.sort(
-                      (a, b) => (b.transactionDate ?? b.createdAt).compareTo(
-                        a.transactionDate ?? a.createdAt,
-                      ),
-                    );
-                  } else if (_selectedSort == 'Due Date') {
-                    filtered.sort((a, b) {
-                      final aIsSettled =
-                          a.type == TransactionType.received ||
-                          a.type == TransactionType.paid;
-                      final bIsSettled =
-                          b.type == TransactionType.received ||
-                          b.type == TransactionType.paid;
-                      if (!aIsSettled && !bIsSettled) {
-                        if (a.dueDate == null && b.dueDate == null)
+  
+                    // Apply sorting
+                    if (_selectedSort == 'Transaction Date') {
+                      filtered.sort(
+                        (a, b) => (b.transactionDate ?? b.createdAt).compareTo(
+                          a.transactionDate ?? a.createdAt,
+                        ),
+                      );
+                    } else if (_selectedSort == 'Due Date') {
+                      filtered.sort((a, b) {
+                        final aIsSettled =
+                            a.type == TransactionType.received ||
+                            a.type == TransactionType.paid;
+                        final bIsSettled =
+                            b.type == TransactionType.received ||
+                            b.type == TransactionType.paid;
+                        if (!aIsSettled && !bIsSettled) {
+                          if (a.dueDate == null && b.dueDate == null)
+                            return (b.transactionDate ?? b.createdAt).compareTo(
+                              a.transactionDate ?? a.createdAt,
+                            );
+                          if (a.dueDate == null) return 1;
+                          if (b.dueDate == null) return -1;
+                          return a.dueDate!.compareTo(b.dueDate!);
+                        }
+                        if (aIsSettled && bIsSettled) {
                           return (b.transactionDate ?? b.createdAt).compareTo(
                             a.transactionDate ?? a.createdAt,
                           );
-                        if (a.dueDate == null) return 1;
-                        if (b.dueDate == null) return -1;
-                        return a.dueDate!.compareTo(b.dueDate!);
-                      }
-                      if (aIsSettled && bIsSettled) {
-                        return (b.transactionDate ?? b.createdAt).compareTo(
-                          a.transactionDate ?? a.createdAt,
-                        );
-                      }
-                      return aIsSettled ? 1 : -1;
-                    });
-                  } else if (_selectedSort == 'Amount') {
-                    filtered.sort((a, b) => b.amount.compareTo(a.amount));
-                  } else if (_selectedSort == 'Latest') {
-                    filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-                  } else if (_selectedSort == 'Oldest') {
-                    filtered.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-                  }
-
-                  if (filtered.isEmpty) {
-                    return const EmptyState(
-                      icon: '💸',
-                      title: 'No transactions found',
-                      subtitle:
-                          'Try changing the selected filters or add a new transaction.',
-                    );
-                  }
-
-                  return ListView.builder(
-                    itemCount: filtered.length,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    itemBuilder: (context, index) {
-                      final tx = filtered[index];
-                      final isOwed =
-                          tx.type == TransactionType.gave ||
-                          tx.type == TransactionType.paid;
-                      final txColor = isOwed
-                          ? AppDesign.greenReceivable
-                          : AppDesign.redPayable;
-
-                      final badgeDetails = BalanceCalculator.getDueBadgeDetails(
-                        tx,
+                        }
+                        return aIsSettled ? 1 : -1;
+                      });
+                    } else if (_selectedSort == 'Amount') {
+                      filtered.sort((a, b) => b.amount.compareTo(a.amount));
+                    } else if (_selectedSort == 'Latest') {
+                      filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                    } else if (_selectedSort == 'Oldest') {
+                      filtered.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+                    }
+  
+                    if (filtered.isEmpty) {
+                      return const EmptyState(
+                        icon: '💸',
+                        title: 'No transactions found',
+                        subtitle:
+                            'Try changing the selected filters or add a new transaction.',
                       );
-                      final badgeLabel = badgeDetails['label'] as String;
-                      final badgeColorName = badgeDetails['color'] as String;
-                      final badgeColor = badgeColorName == 'red'
-                          ? AppDesign.redPayable
-                          : (badgeColorName == 'orange'
-                                ? AppDesign.amberWarning
-                                : (badgeColorName == 'green'
-                                      ? AppDesign.greenReceivable
-                                      : (badgeColorName == 'blue'
-                                            ? Colors.blue
-                                            : AppDesign.grayNeutral)));
-
-                      return Dismissible(
-                        key: Key(tx.uuid),
-                        direction: DismissDirection.horizontal,
-                        background: Container(
-                          alignment: Alignment.centerLeft,
-                          padding: const EdgeInsets.only(left: 20),
-                          margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            color: AppDesign.primaryEmerald,
-                            borderRadius: AppDesign.borderMedium,
+                    }
+  
+                    return ListView.builder(
+                      itemCount: filtered.length,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemBuilder: (context, index) {
+                        final tx = filtered[index];
+                        final isOwed =
+                            tx.type == TransactionType.gave ||
+                            tx.type == TransactionType.paid;
+                        final txColor = isOwed
+                            ? AppDesign.greenReceivable
+                            : AppDesign.redPayable;
+  
+                        final badgeDetails = BalanceCalculator.getDueBadgeDetails(
+                          tx,
+                        );
+                        final badgeLabel = badgeDetails['label'] as String;
+                        final badgeColorName = badgeDetails['color'] as String;
+                        final badgeColor = badgeColorName == 'red'
+                            ? AppDesign.redPayable
+                            : (badgeColorName == 'orange'
+                                  ? AppDesign.amberWarning
+                                  : (badgeColorName == 'green'
+                                        ? AppDesign.greenReceivable
+                                        : (badgeColorName == 'blue'
+                                              ? Colors.blue
+                                              : AppDesign.grayNeutral)));
+  
+                        return Dismissible(
+                          key: Key(tx.uuid),
+                          direction: DismissDirection.horizontal,
+                          background: Container(
+                            alignment: Alignment.centerLeft,
+                            padding: const EdgeInsets.only(left: 20),
+                            margin: const EdgeInsets.only(bottom: 6),
+                            decoration: BoxDecoration(
+                              color: AppDesign.primaryEmerald,
+                              borderRadius: AppDesign.borderMedium,
+                            ),
+                            child: const Icon(
+                              Icons.edit_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.edit_rounded,
-                            color: Colors.white,
-                            size: 22,
+                          secondaryBackground: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20),
+                            margin: const EdgeInsets.only(bottom: 6),
+                            decoration: BoxDecoration(
+                              color: AppDesign.redPayable,
+                              borderRadius: AppDesign.borderMedium,
+                            ),
+                            child: const Icon(
+                              Icons.delete_outline_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
-                        ),
-                        secondaryBackground: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            color: AppDesign.redPayable,
-                            borderRadius: AppDesign.borderMedium,
-                          ),
-                          child: const Icon(
-                            Icons.delete_outline_rounded,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                        confirmDismiss: (direction) async {
-                          if (direction == DismissDirection.endToStart) {
-                            return await _confirmDeleteTransaction(context, tx);
-                          } else {
-                            _showEditTransactionDialog(context, tx);
-                            return false;
-                          }
-                        },
-                        onDismissed: (_) {
-                          final deletedTx = tx;
-                          ref
-                              .read(
-                                transactionsForKhataProvider(
-                                  widget.khataUuid,
-                                ).notifier,
-                              )
-                              .deleteTransaction(tx.uuid);
-                          AppSnackbar.show(
-                            context,
-                            'Transaction moved to Trash',
-                            type: AppSnackbarType.success,
-                            actionLabel: 'UNDO',
-                            onActionPressed: () async {
-                              deletedTx.isDeleted = false;
-                              await ref
-                                  .read(
-                                    transactionsForKhataProvider(
-                                      widget.khataUuid,
-                                    ).notifier,
-                                  )
-                                  .addTransaction(deletedTx);
-                            },
-                          );
-                        },
-                        child: GestureDetector(
-                          onLongPress: () => _showLongPressMenu(context, tx),
-                          child: Stack(
-                            children: [
-                              // Timeline vertical line
-                              Positioned(
-                                top: 0,
-                                bottom: 0,
-                                left: 20,
-                                child: Container(
-                                  width: 2,
-                                  color: AppDesign.primaryTeal.withValues(
-                                    alpha: 0.15,
+                          confirmDismiss: (direction) async {
+                            if (direction == DismissDirection.endToStart) {
+                              return await _confirmDeleteTransaction(context, tx);
+                            } else {
+                              _showEditTransactionDialog(context, tx);
+                              return false;
+                            }
+                          },
+                          onDismissed: (_) {
+                            final deletedTx = tx;
+                            ref
+                                .read(
+                                  transactionsForKhataProvider(
+                                    widget.khataUuid,
+                                  ).notifier,
+                                )
+                                .deleteTransaction(tx.uuid);
+                            AppSnackbar.show(
+                              context,
+                              'Transaction moved to Trash',
+                              type: AppSnackbarType.success,
+                              actionLabel: 'UNDO',
+                              onActionPressed: () async {
+                                deletedTx.isDeleted = false;
+                                await ref
+                                    .read(
+                                      transactionsForKhataProvider(
+                                        widget.khataUuid,
+                                      ).notifier,
+                                    )
+                                    .addTransaction(deletedTx);
+                              },
+                            );
+                          },
+                          child: GestureDetector(
+                            onLongPress: () => _showLongPressMenu(context, tx),
+                            child: Stack(
+                              children: [
+                                // Timeline vertical line
+                                Positioned(
+                                  top: 0,
+                                  bottom: 0,
+                                  left: 20,
+                                  child: Container(
+                                    width: 2,
+                                    color: AppDesign.primaryTeal.withValues(
+                                      alpha: 0.15,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              // Timeline node dot
-                              Positioned(
-                                top: 20,
-                                left: 15,
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: txColor,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: txColor.withValues(alpha: 0.2),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
+                                // Timeline node dot
+                                Positioned(
+                                  top: 16,
+                                  left: 16,
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: txColor,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // Transaction Card details
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  left: 36,
-                                  right: 8,
-                                  bottom: 6,
-                                ),
-                                child: Card(
-                                  margin: EdgeInsets.zero,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              BalanceCalculator.formatPkr(
-                                                tx.amount,
-                                                currency,
-                                              ),
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: txColor,
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                            Text(
-                                              tx.type.name.toUpperCase(),
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: txColor,
-                                                fontSize: 11,
-                                              ),
-                                            ),
-                                          ],
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: txColor.withValues(alpha: 0.2),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
                                         ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                const Text(
-                                                  'Date:',
-                                                  style: TextStyle(
-                                                    fontSize: 10,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  '${(tx.transactionDate ?? tx.createdAt).day} ${_getMonthName(tx.transactionDate ?? tx.createdAt)} ${(tx.transactionDate ?? tx.createdAt).year}',
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            if (tx.dueDate != null)
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.end,
-                                                children: [
-                                                  const Text(
-                                                    'Due:',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    '${tx.dueDate!.day} ${_getMonthName(tx.dueDate!)} ${tx.dueDate!.year}',
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            StatusBadge(
-                                              label: badgeLabel,
-                                              color: badgeColor,
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.delete_outline_rounded,
-                                                size: 18,
-                                              ),
-                                              tooltip: 'Delete',
-                                              padding: EdgeInsets.zero,
-                                              constraints:
-                                                  const BoxConstraints(),
-                                              onPressed: () async {
-                                                final confirmed =
-                                                    await _confirmDeleteTransaction(
-                                                      context,
-                                                      tx,
-                                                    );
-                                                if (confirmed) {
-                                                  final deletedTx = tx;
-                                                  ref
-                                                      .read(
-                                                        transactionsForKhataProvider(
-                                                          widget.khataUuid,
-                                                        ).notifier,
-                                                      )
-                                                      .deleteTransaction(
-                                                        tx.uuid,
-                                                      );
-                                                  if (!context.mounted) return;
-                                                  AppSnackbar.show(
-                                                    context,
-                                                    'Transaction moved to Trash',
-                                                    type: AppSnackbarType.success,
-                                                    actionLabel: 'UNDO',
-                                                    onActionPressed: () async {
-                                                      deletedTx.isDeleted = false;
-                                                      await ref
-                                                          .read(
-                                                            transactionsForKhataProvider(
-                                                              widget.khataUuid,
-                                                            ).notifier,
-                                                          )
-                                                          .addTransaction(
-                                                            deletedTx,
-                                                          );
-                                                    },
-                                                  );
-                                                }
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                        if (tx.notes != null) ...[
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            tx.notes!,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: isDark
-                                                  ? Colors.grey.shade400
-                                                  : Colors.black54,
-                                            ),
-                                          ),
-                                        ],
                                       ],
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
+                                // Transaction Card details
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 36,
+                                    right: 8,
+                                    bottom: 4,
+                                  ),
+                                  child: Card(
+                                    margin: EdgeInsets.zero,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                BalanceCalculator.formatPkr(
+                                                  tx.amount,
+                                                  currency,
+                                                ),
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: txColor,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              Text(
+                                                tx.type.name.toUpperCase(),
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: txColor,
+                                                  fontSize: 10,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    'Date:',
+                                                    style: TextStyle(
+                                                      fontSize: 9,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    '${(tx.transactionDate ?? tx.createdAt).day} ${_getMonthName(tx.transactionDate ?? tx.createdAt)} ${(tx.transactionDate ?? tx.createdAt).year}',
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              if (tx.dueDate != null)
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
+                                                  children: [
+                                                    const Text(
+                                                      'Due:',
+                                                      style: TextStyle(
+                                                        fontSize: 9,
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      '${tx.dueDate!.day} ${_getMonthName(tx.dueDate!)} ${tx.dueDate!.year}',
+                                                      style: const TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              StatusBadge(
+                                                label: badgeLabel,
+                                                color: badgeColor,
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.delete_outline_rounded,
+                                                  size: 16,
+                                                ),
+                                                tooltip: 'Delete',
+                                                padding: EdgeInsets.zero,
+                                                constraints:
+                                                    const BoxConstraints(),
+                                                onPressed: () async {
+                                                  final confirmed =
+                                                      await _confirmDeleteTransaction(
+                                                        context,
+                                                        tx,
+                                                      );
+                                                  if (confirmed) {
+                                                    final deletedTx = tx;
+                                                    ref
+                                                        .read(
+                                                          transactionsForKhataProvider(
+                                                            widget.khataUuid,
+                                                          ).notifier,
+                                                        )
+                                                        .deleteTransaction(
+                                                          tx.uuid,
+                                                        );
+                                                    if (!context.mounted) return;
+                                                    AppSnackbar.show(
+                                                      context,
+                                                      'Transaction moved to Trash',
+                                                      type: AppSnackbarType.success,
+                                                      actionLabel: 'UNDO',
+                                                      onActionPressed: () async {
+                                                        deletedTx.isDeleted = false;
+                                                        await ref
+                                                            .read(
+                                                              transactionsForKhataProvider(
+                                                                widget.khataUuid,
+                                                              ).notifier,
+                                                            )
+                                                            .addTransaction(
+                                                              deletedTx,
+                                                            );
+                                                      },
+                                                    );
+                                                  }
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          if (tx.notes != null) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              tx.notes!,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: isDark
+                                                    ? Colors.grey.shade400
+                                                    : Colors.black54,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(
-                  child: CircularProgressIndicator(
-                    color: AppDesign.primaryEmerald,
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(
+                      color: AppDesign.primaryEmerald,
+                    ),
                   ),
+                  error: (err, _) => Center(child: Text('Error: $err')),
                 ),
-                error: (err, _) => Center(child: Text('Error: $err')),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -880,7 +835,7 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.only(top: 16.0),
+      padding: const EdgeInsets.only(top: 10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -890,7 +845,7 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
@@ -898,28 +853,28 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
               Text(
                 '${(percent * 100).toStringAsFixed(0)}%',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: color,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: percent,
               color: color,
               backgroundColor: color.withValues(alpha: 0.1),
-              minHeight: 8,
+              minHeight: 5,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             '$actionLabel $currentFormatted / $targetFormatted',
             style: const TextStyle(
-              fontSize: 11,
+              fontSize: 10,
               color: Colors.grey,
               fontWeight: FontWeight.bold,
             ),

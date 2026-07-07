@@ -44,8 +44,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         children: [
           // Categories Header Grid
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            height: 60,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            height: 48,
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
@@ -70,14 +70,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   Widget _buildCategoryTab(String category, IconData icon) {
     final isSelected = _selectedCategory == category;
     return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
+      padding: const EdgeInsets.only(right: 6.0),
       child: ChoiceChip(
         avatar: Icon(
           icon,
           color: isSelected ? Colors.white : AppDesign.primaryEmerald,
-          size: 16,
+          size: 14,
         ),
-        label: Text(category, style: const TextStyle(fontSize: 12)),
+        label: Text(category, style: const TextStyle(fontSize: 11)),
         selected: isSelected,
         selectedColor: AppDesign.primaryEmerald,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -119,7 +119,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           child: TextField(
             decoration: InputDecoration(
               hintText: 'Search contacts...',
@@ -133,7 +133,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 borderRadius: AppDesign.borderMedium,
                 borderSide: BorderSide.none,
               ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
             ),
             onChanged: (val) {
               setState(() {
@@ -175,8 +175,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 child: ListView.builder(
                   itemCount: filtered.length,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: 10,
+                    vertical: 4,
                   ),
                   itemBuilder: (context, index) {
                     final person = filtered[index];
@@ -185,13 +185,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     );
 
                     return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
+                      margin: const EdgeInsets.only(bottom: 6),
                       clipBehavior: Clip.antiAlias,
                       child: Column(
                         children: [
                           ListTile(
                             dense: true,
                             leading: CircleAvatar(
+                              radius: 16,
                               backgroundColor: AppDesign.primaryEmerald
                                   .withValues(alpha: 0.1),
                               child: Text(
@@ -199,6 +200,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: AppDesign.primaryEmerald,
+                                  fontSize: 13,
                                 ),
                               ),
                             ),
@@ -206,14 +208,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               person.name,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
+                                fontSize: 13,
                               ),
                             ),
-                            subtitle: Text(person.phone ?? 'No phone number'),
+                            subtitle: Text(
+                              person.phone ?? 'No phone number',
+                              style: const TextStyle(fontSize: 11),
+                            ),
                             trailing: Icon(
                               isExpanded
                                   ? Icons.expand_less
                                   : Icons.expand_more,
                               color: AppDesign.primaryEmerald,
+                              size: 18,
                             ),
                             onTap: () {
                               setState(() {
@@ -266,7 +273,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
         return ListView.builder(
           itemCount: people.length,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           itemBuilder: (context, index) {
             final person = people[index];
             final balanceAsync = ref.watch(personBalanceProvider(person.uuid));
@@ -284,17 +291,18 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     : AppDesign.redPayable;
 
                 return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
+                  margin: const EdgeInsets.only(bottom: 6),
                   child: ListTile(
                     dense: true,
                     title: Text(
                       person.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                     subtitle: Text(
                       isReceivable
                           ? 'Outstanding Receivable'
                           : 'Outstanding Payable',
+                      style: const TextStyle(fontSize: 11),
                     ),
                     trailing: StatusBadge(
                       label: '$currency ${bal.abs().toStringAsFixed(0)}',
@@ -339,12 +347,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   items.add(
                     Card(
                       margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
+                        horizontal: 10,
+                        vertical: 4,
                       ),
                       child: ListTile(
                         dense: true,
                         leading: CircleAvatar(
+                          radius: 16,
                           backgroundColor:
                               (isOverdue
                                       ? AppDesign.redPayable
@@ -357,14 +366,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             color: isOverdue
                                 ? AppDesign.redPayable
                                 : AppDesign.amberWarning,
+                            size: 16,
                           ),
                         ),
                         title: Text(
                           person.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                         subtitle: Text(
                           'Due: ${due.day}/${due.month}/${due.year}',
+                          style: const TextStyle(fontSize: 11),
                         ),
                         trailing: StatusBadge(
                           label: isOverdue ? 'Overdue' : 'Due Soon',
@@ -390,7 +401,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             }
 
             return ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 4),
               children: items,
             );
           },
@@ -420,15 +431,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
         return ListView.builder(
           itemCount: insights.length,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           itemBuilder: (context, index) {
             final ins = insights[index];
             final isPositive = ins.netCashflow >= 0;
 
             return Card(
-              margin: const EdgeInsets.only(bottom: 12),
+              margin: const EdgeInsets.only(bottom: 6),
               child: Padding(
-                padding: const EdgeInsets.all(AppDesign.space16),
+                padding: const EdgeInsets.all(10.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -439,7 +450,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           ins.monthLabel,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: 14,
                           ),
                         ),
                         StatusBadge(
@@ -451,7 +462,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         ),
                       ],
                     ),
-                    const Divider(height: 20),
+                    const Divider(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -461,7 +472,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             const Text(
                               'CASH IN (Collected)',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 9,
                                 color: Colors.grey,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -472,6 +483,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppDesign.greenReceivable,
+                                fontSize: 13,
                               ),
                             ),
                           ],
@@ -482,7 +494,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             const Text(
                               'CASH OUT (Lent)',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 9,
                                 color: Colors.grey,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -493,6 +505,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppDesign.redPayable,
+                                fontSize: 13,
                               ),
                             ),
                           ],
@@ -546,7 +559,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       children: [
         // Summary Header Cards
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: isDark ? AppDesign.darkCard : Colors.grey.shade50,
             border: Border(
@@ -564,17 +577,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     const Text(
                       'TOTAL EXPORTS',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 9,
                         color: Colors.grey,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       '$totalReports Statement${totalReports == 1 ? "" : "s"}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -587,17 +600,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     const Text(
                       'LAST EXPORT DATE',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 9,
                         color: Colors.grey,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       lastExportDateStr,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                        fontSize: 11,
                         color: AppDesign.primaryTeal,
                       ),
                     ),
@@ -610,7 +623,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
         // Search and Sort controls
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           child: Row(
             children: [
               Expanded(
@@ -620,6 +633,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     prefixIcon: const Icon(
                       Icons.search_rounded,
                       color: AppDesign.primaryEmerald,
+                      size: 18,
                     ),
                     filled: true,
                     fillColor: isDark ? AppDesign.darkCard : Colors.grey[100],
@@ -627,7 +641,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       borderRadius: AppDesign.borderMedium,
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                   onChanged: (val) {
                     setState(() {
@@ -636,18 +650,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   },
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               DropdownButton<String>(
                 value: _historySortOrder,
                 underline: const SizedBox(),
                 icon: const Icon(
                   Icons.sort_rounded,
                   color: AppDesign.primaryEmerald,
+                  size: 18,
                 ),
                 style: const TextStyle(
                   color: AppDesign.primaryEmerald,
                   fontWeight: FontWeight.bold,
-                  fontSize: 13,
+                  fontSize: 12,
                 ),
                 items: ['Newest', 'Oldest'].map((sort) {
                   return DropdownMenuItem(value: sort, child: Text(sort));
@@ -676,36 +691,39 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               : ListView.builder(
                   itemCount: filteredHistory.length,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: 10,
+                    vertical: 4,
                   ),
                   itemBuilder: (context, index) {
                     final log = filteredHistory[index];
                     return Card(
-                      margin: const EdgeInsets.only(bottom: 10),
+                      margin: const EdgeInsets.only(bottom: 6),
                       child: ListTile(
                         dense: true,
                         leading: CircleAvatar(
+                          radius: 16,
                           backgroundColor: Colors.blue.withValues(alpha: 0.1),
                           child: const Icon(
                             Icons.picture_as_pdf_outlined,
                             color: Colors.blue,
+                            size: 16,
                           ),
                         ),
                         title: Text(
                           log.khataTitle,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                            fontSize: 13,
                           ),
                         ),
                         subtitle: Text(
                           'Contact: ${log.personName}\nFormat: ${log.format}',
+                          style: const TextStyle(fontSize: 11),
                         ),
                         trailing: Text(
                           '${log.exportedAt.day}/${log.exportedAt.month} ${log.exportedAt.hour.toString().padLeft(2, '0')}:${log.exportedAt.minute.toString().padLeft(2, '0')}',
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 10,
                             color: Colors.grey,
                             fontWeight: FontWeight.w600,
                           ),
@@ -734,10 +752,10 @@ class _PersonKhatasView extends ConsumerWidget {
       data: (khatas) {
         if (khatas.isEmpty) {
           return const Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(12.0),
             child: Text(
               'No accounts / Khatas created for this contact.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
           );
         }
@@ -755,11 +773,11 @@ class _PersonKhatasView extends ConsumerWidget {
                   dense: true,
                   title: Text(
                     khata.title,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                   subtitle: Text(
                     khata.notes ?? 'No remarks',
-                    style: const TextStyle(fontSize: 12),
+                    style: const TextStyle(fontSize: 11),
                   ),
                   trailing: ElevatedButton.icon(
                     onPressed: () {
@@ -771,17 +789,17 @@ class _PersonKhatasView extends ConsumerWidget {
                           );
                       context.push('/statement/${khata.uuid}');
                     },
-                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 14),
                     label: const Text('View Statement'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppDesign.primaryEmerald,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                        horizontal: 8,
+                        vertical: 4,
                       ),
                       textStyle: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
                       shape: RoundedRectangleBorder(

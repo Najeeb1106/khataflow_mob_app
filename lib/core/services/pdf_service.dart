@@ -24,7 +24,11 @@ class PdfService {
 
     // Sort transactions oldest first to calculate running balance correctly
     final sortedTxs = List<Transaction>.from(transactions)
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      ..sort((a, b) {
+        final dateA = a.transactionDate ?? a.createdAt;
+        final dateB = b.transactionDate ?? b.createdAt;
+        return dateA.compareTo(dateB);
+      });
 
     double runningBalance = 0.0;
     final List<pw.TableRow> rows = [];

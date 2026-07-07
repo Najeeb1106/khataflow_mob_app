@@ -57,6 +57,40 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    setState(() => _isLoading = true);
+
+    try {
+      final repo = ref.read(khataRepositoryProvider);
+      final existingKhatas = await repo.getKhatasForPerson(widget.personUuid);
+      
+      final proposedTitle = _titleController.text.trim().toLowerCase();
+      final isDuplicate = existingKhatas.any((k) {
+        // When editing an existing Khata, ignore the current Khata's own UUID
+        if (widget.khataUuid != null && k.uuid == widget.khataUuid) {
+          return false;
+        }
+        return k.title.trim().toLowerCase() == proposedTitle;
+      });
+
+      if (isDuplicate) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('A Khata with this name already exists for this contact.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+        return;
+      }
+    } catch (_) {
+      // Proceed to save if database check fails
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+
     final khata = _existingKhata ?? Khata()
       ..uuid = const Uuid().v4()
       ..personUuid = widget.personUuid
@@ -78,7 +112,7 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
     }
 
     if (mounted) {
-      context.pop();
+      context.pop(khata);
     }
   }
 
