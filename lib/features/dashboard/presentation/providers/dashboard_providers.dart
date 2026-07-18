@@ -122,6 +122,14 @@ final dashboardDueStatsProvider =
                 tx.type == TransactionType.paid)
               continue;
 
+            final isReceivable = tx.type == TransactionType.gave || 
+                (tx.type == TransactionType.adjustment && tx.amount >= 0);
+            final isPayable = tx.type == TransactionType.borrowed || 
+                (tx.type == TransactionType.adjustment && tx.amount < 0);
+            if ((isReceivable && netBalance <= 0) || (isPayable && netBalance >= 0)) {
+              continue;
+            }
+
             final due = DateTime(
               tx.dueDate!.year,
               tx.dueDate!.month,

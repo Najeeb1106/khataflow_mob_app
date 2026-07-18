@@ -33,6 +33,11 @@ class _AdvancedTransactionScreenState
   DateTime? _dueDate;
   DateTime? _reminderDate;
 
+  /// Whether the selected type supports due dates and reminders.
+  bool get _supportsDueDates =>
+      _selectedType == TransactionType.gave ||
+      _selectedType == TransactionType.borrowed;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +50,19 @@ class _AdvancedTransactionScreenState
         _selectedType = match;
       });
     }
+  }
+
+  /// Updates the selected type and clears due fields when switching to types
+  /// that do not support them (RECEIVED / REPAYMENT).
+  void _onTypeChanged(TransactionType type) {
+    setState(() {
+      _selectedType = type;
+      // Clear stale due data for settlement types
+      if (type == TransactionType.received || type == TransactionType.paid) {
+        _dueDate = null;
+        _reminderDate = null;
+      }
+    });
   }
 
   Future<void> _selectTransactionDate(BuildContext context) async {
@@ -134,6 +152,52 @@ class _AdvancedTransactionScreenState
       return;
     }
 
+    // ── Validation: RECEIVED requires a positive receivable balance ─────────
+    if (_selectedType == TransactionType.received) {
+      final txsState = ref.read(
+        transactionsForKhataProvider(widget.khataUuid),
+      );
+      final txs = txsState.valueOrNull ?? [];
+      double receivable = 0.0;
+      for (final tx in txs) {
+        if (tx.type == TransactionType.gave) receivable += tx.amount;
+        if (tx.type == TransactionType.received) receivable -= tx.amount;
+      }
+      if (receivable <= 0) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You have no outstanding amount to collect.'),
+            backgroundColor: AppDesign.amberWarning,
+          ),
+        );
+        return;
+      }
+    }
+
+    // ── Validation: REPAYMENT requires a positive borrowed balance ──────────
+    if (_selectedType == TransactionType.paid) {
+      final txsState = ref.read(
+        transactionsForKhataProvider(widget.khataUuid),
+      );
+      final txs = txsState.valueOrNull ?? [];
+      double borrowed = 0.0;
+      for (final tx in txs) {
+        if (tx.type == TransactionType.borrowed) borrowed += tx.amount;
+        if (tx.type == TransactionType.paid) borrowed -= tx.amount;
+      }
+      if (borrowed <= 0) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You have no borrowed amount to repay.'),
+            backgroundColor: AppDesign.amberWarning,
+          ),
+        );
+        return;
+      }
+    }
+
     final tx = Transaction()
       ..uuid = const Uuid().v4()
       ..khataUuid = widget.khataUuid
@@ -143,8 +207,8 @@ class _AdvancedTransactionScreenState
           ? null
           : _notesController.text.trim()
       ..transactionDate = _transactionDate
-      ..dueDate = _dueDate
-      ..reminderDate = _reminderDate
+      ..dueDate = _supportsDueDates ? _dueDate : null
+      ..reminderDate = _supportsDueDates ? _reminderDate : null
       ..createdAt = DateTime.now()
       ..updatedAt = DateTime.now()
       ..isDeleted = false;
@@ -153,26 +217,34 @@ class _AdvancedTransactionScreenState
         .read(transactionsForKhataProvider(widget.khataUuid).notifier)
         .addTransaction(tx);
 
-    // Schedule notifications if dates are set
-    if (_dueDate != null) {
+    // Schedule notifications if dates are set (only for types that support them)
+    if (_supportsDueDates && _dueDate != null) {
       final dueId = tx.uuid.hashCode;
-      await NotificationService().scheduleNotification(
-        id: dueId,
-        title: 'Payment Due Alert',
-        body: 'Payment of PKR ${amount.toStringAsFixed(2)} is due now.',
-        scheduledDate: _dueDate!,
-      );
+      try {
+        await NotificationService().scheduleNotification(
+          id: dueId,
+          title: 'Payment Due Alert',
+          body: 'Payment of PKR ${amount.toStringAsFixed(2)} is due now.',
+          scheduledDate: _dueDate!,
+        );
+      } catch (e) {
+        debugPrint("Error scheduling due date notification: $e");
+      }
     }
 
-    if (_reminderDate != null) {
+    if (_supportsDueDates && _reminderDate != null) {
       final remindId = tx.uuid.hashCode + 1;
-      await NotificationService().scheduleNotification(
-        id: remindId,
-        title: 'Transaction Reminder',
-        body:
-            'Reminder for transaction of PKR ${amount.toStringAsFixed(2)}: ${tx.notes ?? "No notes added."}',
-        scheduledDate: _reminderDate!,
-      );
+      try {
+        await NotificationService().scheduleNotification(
+          id: remindId,
+          title: 'Transaction Reminder',
+          body:
+              'Reminder for transaction of PKR ${amount.toStringAsFixed(2)}: ${tx.notes ?? "No notes added."}',
+          scheduledDate: _reminderDate!,
+        );
+      } catch (e) {
+        debugPrint("Error scheduling reminder notification: $e");
+      }
     }
 
     if (mounted) {
@@ -202,7 +274,7 @@ class _AdvancedTransactionScreenState
     final isSelected = _selectedType == type;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
-      onTap: () => setState(() => _selectedType = type),
+      onTap: () => _onTypeChanged(type),
       borderRadius: AppDesign.borderMedium,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
@@ -260,8 +332,8 @@ class _AdvancedTransactionScreenState
           autovalidateMode: AutovalidateMode.onUserInteraction,
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
-              horizontal: AppDesign.space12,
-              vertical: AppDesign.space8,
+              horizontal: AppDesign.space24,
+              vertical: AppDesign.space16,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,8 +341,8 @@ class _AdvancedTransactionScreenState
                 const Text(
                   'Transaction Type',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
                     color: Colors.grey,
                   ),
                 ),
@@ -311,12 +383,12 @@ class _AdvancedTransactionScreenState
                   ],
                 ),
                 const SizedBox(height: 8),
-  
+
                 const Text(
                   'Amount',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
                     color: Colors.grey,
                   ),
                 ),
@@ -328,21 +400,23 @@ class _AdvancedTransactionScreenState
                   keyboardType: TextInputType.number,
                   prefixIcon: Icons.payments_rounded,
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty)
+                    if (val == null || val.trim().isEmpty) {
                       return 'Required: Please enter amount';
+                    }
                     final num = double.tryParse(val.trim());
-                    if (num == null || num <= 0)
+                    if (num == null || num <= 0) {
                       return 'Required: Please enter a valid positive number';
+                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 8),
-  
+
                 const Text(
                   'Transaction Date (Required)',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
                     color: Colors.grey,
                   ),
                 ),
@@ -397,129 +471,132 @@ class _AdvancedTransactionScreenState
                   ),
                 ),
                 const SizedBox(height: 8),
-  
-                const Text(
-                  'Schedule & Alerts (Optional)',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: AppDesign.borderMedium,
-                    border: Border.all(
-                      color: isDark
-                          ? AppDesign.darkBorder
-                          : AppDesign.lightBorder,
+
+                // ── Conditional: Due Date & Reminder (only for GAVE / BORROWED) ──
+                if (_supportsDueDates) ...[
+                  const Text(
+                    'Schedule & Alerts (Optional)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.grey,
                     ),
-                    color: isDark ? AppDesign.darkCard : Colors.white,
                   ),
-                  child: Column(
-                    children: [
-                      ListTile(
-                        dense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 0,
-                        ),
-                        leading: Icon(
-                          Icons.event_note_rounded,
-                          color: AppDesign.primaryEmerald,
-                          size: 18,
-                        ),
-                        title: Text(
-                          _dueDate == null
-                              ? 'Due Date (Optional)'
-                              : 'Due: ${_dueDate!.day}/${_dueDate!.month}/${_dueDate!.year} at ${TimeOfDay.fromDateTime(_dueDate!).format(context)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: _dueDate == null
-                                ? Colors.grey
-                                : AppDesign.primaryEmerald,
-                            fontWeight: _dueDate == null
-                                ? FontWeight.normal
-                                : FontWeight.bold,
-                          ),
-                        ),
-                        trailing: _dueDate != null
-                            ? IconButton(
-                                icon: const Icon(
-                                  Icons.close_rounded,
-                                  size: 16,
-                                  color: AppDesign.redPayable,
-                                ),
-                                onPressed: () => setState(() => _dueDate = null),
-                              )
-                            : const Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 12,
-                                color: Colors.grey,
-                              ),
-                        onTap: () => _selectDueDate(context),
+                  const SizedBox(height: 4),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: AppDesign.borderMedium,
+                      border: Border.all(
+                        color: isDark
+                            ? AppDesign.darkBorder
+                            : AppDesign.lightBorder,
                       ),
-                      const Divider(height: 1, indent: 14, endIndent: 14),
-                      ListTile(
-                        dense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 0,
-                        ),
-                        leading: Icon(
-                          Icons.notifications_active_outlined,
-                          color: AppDesign.primaryTeal,
-                          size: 18,
-                        ),
-                        title: Text(
-                          _reminderDate == null
-                              ? 'Reminder Date (Optional)'
-                              : 'Remind: ${_reminderDate!.day}/${_reminderDate!.month}/${_reminderDate!.year} at ${TimeOfDay.fromDateTime(_reminderDate!).format(context)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: _reminderDate == null
-                                ? Colors.grey
-                                : AppDesign.primaryTeal,
-                            fontWeight: _reminderDate == null
-                                ? FontWeight.normal
-                                : FontWeight.bold,
+                      color: isDark ? AppDesign.darkCard : Colors.white,
+                    ),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 0,
                           ),
-                        ),
-                        trailing: _reminderDate != null
-                            ? IconButton(
-                                icon: const Icon(
-                                  Icons.close_rounded,
-                                  size: 16,
-                                  color: AppDesign.redPayable,
+                          leading: Icon(
+                            Icons.event_note_rounded,
+                            color: AppDesign.primaryEmerald,
+                            size: 18,
+                          ),
+                          title: Text(
+                            _dueDate == null
+                                ? 'Due Date (Optional)'
+                                : 'Due: ${_dueDate!.day}/${_dueDate!.month}/${_dueDate!.year} at ${TimeOfDay.fromDateTime(_dueDate!).format(context)}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: _dueDate == null
+                                  ? Colors.grey
+                                  : AppDesign.primaryEmerald,
+                              fontWeight: _dueDate == null
+                                  ? FontWeight.normal
+                                  : FontWeight.bold,
+                            ),
+                          ),
+                          trailing: _dueDate != null
+                              ? IconButton(
+                                  icon: const Icon(
+                                    Icons.close_rounded,
+                                    size: 16,
+                                    color: AppDesign.redPayable,
+                                  ),
+                                  onPressed: () => setState(() => _dueDate = null),
+                                )
+                              : const Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 12,
+                                  color: Colors.grey,
                                 ),
-                                onPressed: () =>
-                                    setState(() => _reminderDate = null),
-                              )
-                            : const Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 12,
-                                color: Colors.grey,
-                              ),
-                        onTap: () => _selectReminderDate(context),
-                      ),
-                    ],
+                          onTap: () => _selectDueDate(context),
+                        ),
+                        const Divider(height: 1, indent: 14, endIndent: 14),
+                        ListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 0,
+                          ),
+                          leading: Icon(
+                            Icons.notifications_active_outlined,
+                            color: AppDesign.primaryTeal,
+                            size: 18,
+                          ),
+                          title: Text(
+                            _reminderDate == null
+                                ? 'Reminder Date (Optional)'
+                                : 'Remind: ${_reminderDate!.day}/${_reminderDate!.month}/${_reminderDate!.year} at ${TimeOfDay.fromDateTime(_reminderDate!).format(context)}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: _reminderDate == null
+                                  ? Colors.grey
+                                  : AppDesign.primaryTeal,
+                              fontWeight: _reminderDate == null
+                                  ? FontWeight.normal
+                                  : FontWeight.bold,
+                            ),
+                          ),
+                          trailing: _reminderDate != null
+                              ? IconButton(
+                                  icon: const Icon(
+                                    Icons.close_rounded,
+                                    size: 16,
+                                    color: AppDesign.redPayable,
+                                  ),
+                                  onPressed: () =>
+                                      setState(() => _reminderDate = null),
+                                )
+                              : const Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 12,
+                                  color: Colors.grey,
+                                ),
+                          onTap: () => _selectReminderDate(context),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.only(left: 4, top: 4),
-                  child: Text(
-                    'Due Date: When repayment is expected.\nReminder: When KhataFlow should notify you.',
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 4, top: 4),
+                    child: Text(
+                      'Due Date: When repayment is expected.\nReminder: When KhataFlow should notify you.',
+                      style: TextStyle(fontSize: 10, color: Colors.grey),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-  
+                  const SizedBox(height: 8),
+                ],
+
                 const Text(
                   'Notes / Remarks',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
                     color: Colors.grey,
                   ),
                 ),
@@ -531,7 +608,7 @@ class _AdvancedTransactionScreenState
                   prefixIcon: Icons.description_rounded,
                 ),
                 const SizedBox(height: 12),
-  
+
                 AppButton(
                   label: 'Save Transaction',
                   onPressed: _save,

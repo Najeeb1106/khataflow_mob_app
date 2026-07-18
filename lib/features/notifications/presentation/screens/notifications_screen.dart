@@ -90,9 +90,13 @@ class NotificationsScreen extends ConsumerWidget {
             }
 
             return ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDesign.space24,
+                vertical: AppDesign.space16,
+              ),
               itemCount: allNotifications.length,
               itemBuilder: (context, index) {
+                if (index >= allNotifications.length) return const SizedBox.shrink();
                 final item = allNotifications[index];
                 final tx = item['transaction'] as Transaction;
                 final personName = item['personName'] as String;

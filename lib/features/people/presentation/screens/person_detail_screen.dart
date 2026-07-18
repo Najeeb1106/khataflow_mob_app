@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/balance_calculator.dart';
+import '../../../../core/utils/phone_formatter.dart';
 import '../../data/models/person.dart';
 import '../providers/people_providers.dart';
 import '../providers/balance_providers.dart';
@@ -23,7 +24,6 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
   Person? _person;
   bool _isLoading = false;
   DateTime? _lastTransactionDate;
-  double _averageTransactionSize = 0.0;
 
   @override
   void initState() {
@@ -47,15 +47,11 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
     final txRepo = ref.read(transactionRepositoryProvider);
     final khatas = await khataRepo.getKhatasForPerson(widget.personUuid);
 
-    double totalAmount = 0.0;
-    int count = 0;
     DateTime? lastDate;
 
     for (final khata in khatas) {
       final txs = await txRepo.getTransactionsForKhata(khata.uuid);
       for (final tx in txs) {
-        totalAmount += tx.amount;
-        count++;
         final txDate = tx.transactionDate ?? tx.createdAt;
         if (lastDate == null || txDate.isAfter(lastDate)) {
           lastDate = txDate;
@@ -66,7 +62,6 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
     if (mounted) {
       setState(() {
         _lastTransactionDate = lastDate;
-        _averageTransactionSize = count > 0 ? totalAmount / count : 0.0;
       });
     }
   }
@@ -300,16 +295,18 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
                         ),
                       ],
                     ),
-                    const Divider(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildMetaLabel('Average Transaction'),
-                        _buildMetaValue(
-                          '$currency ${_averageTransactionSize.toStringAsFixed(0)}',
-                        ),
-                      ],
-                    ),
+                    if (_person!.phone != null && _person!.phone!.isNotEmpty) ...[
+                      const Divider(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildMetaLabel('Phone'),
+                          _buildMetaValue(
+                            PhoneFormatter.format(_person!.phone),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

@@ -18,7 +18,6 @@ void main() {
       expect(find.text('Notification Reminders'), findsOneWidget);
       expect(find.text('Currency Symbol'), findsOneWidget);
       expect(find.text('Clear All Local Data'), findsOneWidget);
-      expect(find.text('KhataFlow v1.0.0 (Codrix.dev)'), findsOneWidget);
     });
   });
 }

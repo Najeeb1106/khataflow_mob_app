@@ -10,6 +10,9 @@ import '../../../transactions/presentation/providers/transaction_providers.dart'
 import 'package:khata_app/features/settings/presentation/providers/settings_providers.dart';
 import '../../../../core/presentation/design_system.dart';
 import '../../../../core/presentation/widgets/shared_widgets.dart';
+import '../../../../core/utils/avatar_color_helper.dart';
+import '../../../../core/utils/phone_normalizer.dart';
+import '../../../../core/utils/phone_formatter.dart';
 
 class GlobalSearchScreen extends ConsumerStatefulWidget {
   const GlobalSearchScreen({super.key});
@@ -71,8 +74,30 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
 
     for (final person in allPeople) {
       final matchesName = person.name.toLowerCase().contains(_query);
-      final matchesPhone =
-          person.phone?.toLowerCase().contains(_query) ?? false;
+      
+      bool matchesPhone = false;
+      if (person.phone != null) {
+        final queryDigits = _query.replaceAll(RegExp(r'[^\d]'), '');
+        if (queryDigits.isNotEmpty) {
+          final storedNormalized = PhoneNormalizer.normalize(person.phone);
+
+          // Normalize the query digits by removing country prefixes
+          String normalizedQuery = queryDigits;
+          if (normalizedQuery.startsWith('92')) {
+            normalizedQuery = normalizedQuery.substring(2);
+          } else if (normalizedQuery.startsWith('0')) {
+            normalizedQuery = normalizedQuery.substring(1);
+          }
+
+          // If normalized query is empty (e.g. "+", "92", "0"), it matches any contact with a phone number
+          if (normalizedQuery.isEmpty) {
+            matchesPhone = true;
+          } else if (storedNormalized.contains(normalizedQuery)) {
+            matchesPhone = true;
+          }
+        }
+      }
+
       if (matchesName || matchesPhone) {
         peopleResults.add(person);
       }
@@ -157,7 +182,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                 _matchingTransactions.isEmpty
           ? _buildNoResults()
           : ListView(
-              padding: const EdgeInsets.all(AppDesign.space16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDesign.space24,
+                vertical: AppDesign.space16,
+              ),
               children: [
                 if (_matchingPeople.isNotEmpty) ...[
                   const SectionHeader(title: 'Contacts'),
@@ -206,22 +234,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   }
 
   Widget _buildPersonTile(Person person, bool isDark) {
-    // Generate simple deterministic color for avatar
-    final colors = [
-      Colors.teal,
-      Colors.blue,
-      Colors.indigo,
-      Colors.purple,
-      Colors.pink,
-      Colors.orange,
-    ];
-    final colorIndex =
-        person.name.codeUnits.fold<int>(
-          0,
-          (int prev, int element) => prev + element,
-        ) %
-        colors.length;
-    final avatarColor = colors[colorIndex];
+    // Stable UUID-seeded avatar color (does not change on rename)
+    final avatarColor = AvatarColorHelper.forUuid(person.uuid);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -238,7 +252,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
-          person.phone ?? 'No phone number',
+          person.phone != null && person.phone!.isNotEmpty
+              ? PhoneFormatter.format(person.phone)
+              : 'No phone number',
           style: TextStyle(
             fontSize: 12,
             color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,

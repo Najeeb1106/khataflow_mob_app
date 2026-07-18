@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../../../core/services/security_service.dart';
+import '../../../settings/presentation/providers/settings_providers.dart';
 
-class LocalAuthSetupScreen extends StatefulWidget {
-  const LocalAuthSetupScreen({super.key});
+class LocalAuthSetupScreen extends ConsumerStatefulWidget {
+  final String? mode;
+  const LocalAuthSetupScreen({super.key, this.mode});
 
   @override
-  State<LocalAuthSetupScreen> createState() => _LocalAuthSetupScreenState();
+  ConsumerState<LocalAuthSetupScreen> createState() => _LocalAuthSetupScreenState();
 }
 
-class _LocalAuthSetupScreenState extends State<LocalAuthSetupScreen> {
+class _LocalAuthSetupScreenState extends ConsumerState<LocalAuthSetupScreen> {
   final _nameController = TextEditingController();
   final _pinController = TextEditingController();
   final _confirmPinController = TextEditingController();
+  final _recoveryQuestionController = TextEditingController();
+  final _recoveryAnswerController = TextEditingController();
+  String _selectedPredefinedQuestion = "What was my first school's name?";
+  bool _isCustomQuestion = false;
   bool _enableFingerprint = false;
   int _currentStep = 0;
   bool _isFingerprintAvailable = false;
@@ -23,6 +30,9 @@ class _LocalAuthSetupScreenState extends State<LocalAuthSetupScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.mode == 'reset-security') {
+      _currentStep = 1;
+    }
     _checkBiometrics();
   }
 
@@ -62,6 +72,8 @@ class _LocalAuthSetupScreenState extends State<LocalAuthSetupScreen> {
     _nameController.dispose();
     _pinController.dispose();
     _confirmPinController.dispose();
+    _recoveryQuestionController.dispose();
+    _recoveryAnswerController.dispose();
     super.dispose();
   }
 
@@ -88,8 +100,24 @@ class _LocalAuthSetupScreenState extends State<LocalAuthSetupScreen> {
         return;
       }
     }
+    if (_currentStep == 2) {
+      final question = _isCustomQuestion ? _recoveryQuestionController.text.trim() : _selectedPredefinedQuestion;
+      final answer = _recoveryAnswerController.text.trim();
+      if (question.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select or write a recovery question.')),
+        );
+        return;
+      }
+      if (answer.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a recovery answer.')),
+        );
+        return;
+      }
+    }
 
-    if (_currentStep < 2) {
+    if (_currentStep < 3) {
       setState(() => _currentStep++);
     } else {
       _saveAndComplete();
@@ -98,11 +126,26 @@ class _LocalAuthSetupScreenState extends State<LocalAuthSetupScreen> {
 
   Future<void> _saveAndComplete() async {
     try {
+      final question = _isCustomQuestion ? _recoveryQuestionController.text.trim() : _selectedPredefinedQuestion;
+      final answer = _recoveryAnswerController.text.trim();
+
+      final name = widget.mode == 'reset-security'
+          ? (ref.read(settingsProvider).profileName ?? '')
+          : _nameController.text.trim();
+
       await SecurityService.setupProfile(
-        name: _nameController.text.trim(),
+        name: name,
         pin: _pinController.text,
         enableFingerprint: _enableFingerprint,
+        recoveryQuestion: question,
+        recoveryAnswer: answer,
       );
+
+      // Save profile name to persistent non-secure AppSettings
+      await ref.read(settingsProvider.notifier).updateProfileName(name);
+
+      // Save that security setup is completed
+      await ref.read(settingsProvider.notifier).updateSecuritySetupCompleted(true);
 
       // Update session activity timestamp
       await SecurityService.updateLastActive();
@@ -165,8 +208,9 @@ class _LocalAuthSetupScreenState extends State<LocalAuthSetupScreen> {
 
                 // Indicator
                 Row(
-                  children: List.generate(3, (index) {
-                    final isActive = index <= _currentStep;
+                  children: List.generate(widget.mode == 'reset-security' ? 3 : 4, (index) {
+                    final stepToCheck = widget.mode == 'reset-security' ? index + 1 : index;
+                    final isActive = stepToCheck <= _currentStep;
                     return Expanded(
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -272,6 +316,119 @@ class _LocalAuthSetupScreenState extends State<LocalAuthSetupScreen> {
                     ),
                   ),
                 ] else if (_currentStep == 2) ...[
+                  const Text(
+                    'Setup PIN Recovery',
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Choose a recovery question. If you forget your PIN, you can reset it using this question without losing any of your data.',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 24),
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    value: _selectedPredefinedQuestion,
+                    decoration: InputDecoration(
+                      labelText: 'Recovery Question',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      prefixIcon: const Icon(Icons.help_outline_rounded, color: Colors.teal),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: "What was my first school's name?",
+                        child: Text("What was my first school's name?", style: TextStyle(fontSize: 13)),
+                      ),
+                      DropdownMenuItem(
+                        value: "What nickname did my grandfather call me?",
+                        child: Text("What nickname did my grandfather call me?", style: TextStyle(fontSize: 13)),
+                      ),
+                      DropdownMenuItem(
+                        value: "What is my favorite cricket team?",
+                        child: Text("What is my favorite cricket team?", style: TextStyle(fontSize: 13)),
+                      ),
+                      DropdownMenuItem(
+                        value: "Write custom question...",
+                        child: Text("Write custom question...", style: TextStyle(fontSize: 13)),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _selectedPredefinedQuestion = val;
+                          _isCustomQuestion = val == "Write custom question...";
+                        });
+                      }
+                    },
+                  ),
+                  if (_isCustomQuestion) ...[
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _recoveryQuestionController,
+                      decoration: InputDecoration(
+                        labelText: 'Custom Recovery Question',
+                        prefixIcon: const Icon(
+                          Icons.help_center_outlined,
+                          color: Colors.teal,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Colors.teal,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _recoveryAnswerController,
+                    decoration: InputDecoration(
+                      labelText: 'Recovery Answer',
+                      prefixIcon: const Icon(
+                        Icons.question_answer_outlined,
+                        color: Colors.teal,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Colors.teal,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 20)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Warning: If you forget your PIN, you can use this question to reset it without losing your data.',
+                            style: TextStyle(fontSize: 12, color: Colors.amber[900], fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else if (_currentStep == 3) ...[
                   const Text(
                     'Biometric Security',
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
@@ -450,7 +607,7 @@ class _LocalAuthSetupScreenState extends State<LocalAuthSetupScreen> {
                       ),
                       onPressed: _nextStep,
                       child: Text(
-                        _currentStep == 2 ? 'Complete Setup' : 'Continue',
+                        _currentStep == 3 ? 'Complete Setup' : 'Continue',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

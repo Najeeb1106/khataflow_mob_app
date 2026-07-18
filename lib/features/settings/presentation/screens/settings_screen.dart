@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/database/isar_service.dart';
+import '../../../../core/services/backup_service.dart';
 import '../../../../core/services/security_service.dart';
 import '../../../people/presentation/providers/people_providers.dart';
 import '../providers/settings_providers.dart';
@@ -20,12 +22,23 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late Future<String?> _profileNameFuture;
   String _dbSize = 'Calculating...';
+  PackageInfo? _packageInfo;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
     _calculateDbSize();
+    _loadPackageInfo();
+  }
+
+  Future<void> _loadPackageInfo() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _packageInfo = info;
+      });
+    }
   }
 
   void _loadProfile() {
@@ -102,39 +115,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _clearAllData(BuildContext context, WidgetRef ref) async {
-    final showConfirm = await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
-        title: const Text(
-          'Clear All Data',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'Are you sure you want to permanently delete all contacts, khatas, and transactions? This action is irreversible.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppDesign.redPayable,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: AppDesign.borderMedium,
-              ),
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Clear Everything'),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (dialogContext) => _TypedDeleteDialog(),
     );
 
-    if (showConfirm == true) {
+    if (confirmed == true) {
       final isar = IsarService.instance;
       await isar.writeTxn(() async {
         await isar.clear();
@@ -151,18 +138,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _exportBackup(BuildContext context) async {
+    try {
+      await BackupService.exportBackup();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Backup exported — save the file to a safe location.'),
+            backgroundColor: AppDesign.primaryTeal,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: AppDesign.redPayable,
+          ),
+        );
+      }
+    }
+  }
+
   void _selectCurrency(
     BuildContext context,
     WidgetRef ref,
     String currentSymbol,
   ) {
     final currencies = {
-      'Rs.': 'Pakistani Rupee (Rs.)',
-      'PKR': 'PKR (PKR)',
-      '\$': 'US Dollar (\$)',
-      '€': 'Euro (€)',
-      '£': 'British Pound (£)',
-      '₹': 'Indian Rupee (₹)',
+      'PKR': 'PKR (Rs.)',
+      '\$': 'USD (\$)',
+      '€': 'EUR (€)',
+      '£': 'GBP (£)',
+      '₹': 'INR (₹)',
+      'د.إ': 'AED (د.إ) - UAE Dirham',
+      '﷼': 'SAR (﷼) - Saudi Riyal',
     };
 
     showDialog(
@@ -174,24 +185,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             'Select Currency Symbol',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: currencies.entries.map((entry) {
-              return RadioListTile<String>(
-                title: Text(entry.value),
-                value: entry.key,
-                groupValue: currentSymbol,
-                activeColor: AppDesign.primaryEmerald,
-                onChanged: (val) {
-                  if (val != null) {
-                    ref
-                        .read(settingsProvider.notifier)
-                        .updateCurrencySymbol(val);
-                    Navigator.pop(context);
-                  }
-                },
-              );
-            }).toList(),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: currencies.entries.map((entry) {
+                return RadioListTile<String>(
+                  title: Text(entry.value),
+                  value: entry.key,
+                  groupValue: currentSymbol,
+                  activeColor: AppDesign.primaryEmerald,
+                  onChanged: (val) {
+                    if (val != null) {
+                      ref
+                          .read(settingsProvider.notifier)
+                          .updateCurrencySymbol(val);
+                      Navigator.pop(context);
+                    }
+                  },
+                );
+              }).toList(),
+            ),
           ),
         );
       },
@@ -271,10 +284,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   String _getCurrencyName(String symbol) {
     switch (symbol) {
+      case 'PKR':
       case 'Rs.':
         return 'PKR (Rs.)';
-      case 'PKR':
-        return 'PKR (PKR)';
       case '\$':
         return 'USD (\$)';
       case '€':
@@ -283,45 +295,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return 'GBP (£)';
       case '₹':
         return 'INR (₹)';
+      case 'د.إ':
+        return 'AED (د.إ)';
+      case '﷼':
+        return 'SAR (﷼)';
       default:
         return symbol;
     }
-  }
-
-  void _triggerSimulatedBackup() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Exporting Encrypted Database Backup to Documents...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Backup successful! Filename: khataflow_backup.db'),
-          ),
-        );
-      }
-    });
-  }
-
-  void _triggerSimulatedRestore() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Restoring Database from documents backup folder...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        ref.read(peopleListProvider.notifier).loadPeople();
-        _calculateDbSize();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Database restored successfully!')),
-        );
-      }
-    });
   }
 
   @override
@@ -338,8 +318,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(
-          vertical: 8,
-          horizontal: 8,
+          horizontal: AppDesign.space24,
+          vertical: AppDesign.space16,
         ),
         child: Column(
           children: [
@@ -531,6 +511,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     dense: true,
                     leading: Icon(
+                      Icons.upload_rounded,
+                      color: AppDesign.primaryEmerald,
+                      size: 20,
+                    ),
+                    title: const Text('Export Backup', style: TextStyle(fontSize: 13)),
+                    subtitle: const Text(
+                      'Save all data to a backup file',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
+                    onTap: () => _exportBackup(context),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    dense: true,
+                    leading: Icon(
+                      Icons.restore_rounded,
+                      color: AppDesign.amberWarning,
+                      size: 20,
+                    ),
+                    title: const Text('Restore Backup', style: TextStyle(fontSize: 13)),
+                    subtitle: const Text(
+                      'Restore data from a backup file',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
+                    onTap: () => context.push('/settings/backup'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    dense: true,
+                    leading: Icon(
                       Icons.delete_sweep_rounded,
                       color: AppDesign.primaryEmerald,
                       size: 20,
@@ -542,32 +554,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                     onTap: () => context.push('/trash'),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    dense: true,
-                    leading: Icon(
-                      Icons.cloud_upload_rounded,
-                      color: AppDesign.primaryEmerald,
-                      size: 20,
-                    ),
-                    title: const Text('Backup Database', style: TextStyle(fontSize: 13)),
-                    subtitle: const Text('Export local ledger copy securely', style: TextStyle(fontSize: 11)),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
-                    onTap: _triggerSimulatedBackup,
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    dense: true,
-                    leading: Icon(
-                      Icons.cloud_download_rounded,
-                      color: AppDesign.primaryEmerald,
-                      size: 20,
-                    ),
-                    title: const Text('Restore Database', style: TextStyle(fontSize: 13)),
-                    subtitle: const Text('Import database from local files', style: TextStyle(fontSize: 11)),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
-                    onTap: _triggerSimulatedRestore,
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -642,6 +628,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       );
                     },
                   ),
+                  ListTile(
+                    dense: true,
+                    leading: Icon(
+                      Icons.help_outline_rounded,
+                      color: AppDesign.primaryEmerald,
+                      size: 20,
+                    ),
+                    title: const Text('View Tutorial Again', style: TextStyle(fontSize: 13)),
+                    subtitle: const Text('Show onboarding slides', style: TextStyle(fontSize: 11)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 12),
+                    onTap: () {
+                      context.push('/onboarding?fromSettings=true');
+                    },
+                  ),
                   const Divider(height: 1),
                   ListTile(
                     dense: true,
@@ -651,7 +651,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       size: 20,
                     ),
                     title: const Text('App Version', style: TextStyle(fontSize: 13)),
-                    subtitle: const Text('Version 1.1.1 (Build 12)', style: TextStyle(fontSize: 11)),
+                    subtitle: Text(
+                      _packageInfo != null
+                          ? 'Version ${_packageInfo!.version} (Build ${_packageInfo!.buildNumber})'
+                          : 'Loading...',
+                      style: const TextStyle(fontSize: 11),
+                    ),
                     onTap: null,
                   ),
                 ],
@@ -691,9 +696,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 12),
 
             // Developer signature
-            const Text(
-              'KhataFlow v1.0.0 (Codrix.dev)',
-              style: TextStyle(
+            Text(
+              _packageInfo != null
+                  ? '${_packageInfo!.appName} v${_packageInfo!.version}'
+                  : 'KhataFlow',
+              style: const TextStyle(
                 color: Colors.grey,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -703,6 +710,129 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Typed-DELETE confirmation dialog for "Clear All Local Data"
+// ---------------------------------------------------------------------------
+class _TypedDeleteDialog extends StatefulWidget {
+  const _TypedDeleteDialog();
+
+  @override
+  State<_TypedDeleteDialog> createState() => _TypedDeleteDialogState();
+}
+
+class _TypedDeleteDialogState extends State<_TypedDeleteDialog> {
+  final TextEditingController _controller = TextEditingController();
+  bool _isEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      final matches = _controller.text == 'DELETE';
+      if (matches != _isEnabled) {
+        setState(() => _isEnabled = matches);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
+      title: const Text(
+        'Clear All Local Data',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: AppDesign.redPayable,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'This will permanently delete all contacts, khatas, and '
+            'transactions. This action cannot be undone.',
+            style: TextStyle(fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppDesign.redPayable.withValues(alpha: 0.06),
+              borderRadius: AppDesign.borderSmall,
+              border: Border.all(
+                color: AppDesign.redPayable.withValues(alpha: 0.3),
+              ),
+            ),
+            child: const Text(
+              'Type DELETE below to confirm:',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppDesign.redPayable,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            autocorrect: false,
+            enableSuggestions: false,
+            textCapitalization: TextCapitalization.characters,
+            decoration: InputDecoration(
+              hintText: 'DELETE',
+              hintStyle: TextStyle(color: Colors.grey.shade400),
+              border: OutlineInputBorder(
+                borderRadius: AppDesign.borderSmall,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: AppDesign.borderSmall,
+                borderSide: const BorderSide(
+                  color: AppDesign.redPayable,
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+            ),
+          ),
+        ],
+      ),
+      actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppDesign.redPayable,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            disabledBackgroundColor: AppDesign.redPayable.withValues(alpha: 0.3),
+            disabledForegroundColor: Colors.white54,
+            shape: RoundedRectangleBorder(
+              borderRadius: AppDesign.borderMedium,
+            ),
+          ),
+          onPressed: _isEnabled ? () => Navigator.pop(context, true) : null,
+          child: const Text('Clear Everything'),
+        ),
+      ],
     );
   }
 }

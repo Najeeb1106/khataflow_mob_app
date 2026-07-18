@@ -75,9 +75,10 @@ class BalanceCalculator {
   }
 
   static String formatPkr(double amount, [String currency = 'Rs.']) {
+    final displayCurrency = (currency == 'PKR' || currency == 'Rs.') ? 'Rs.' : currency;
     final value = amount.abs().toStringAsFixed(0);
     if (value.length <= 3) {
-      return '$currency $value';
+      return '$displayCurrency $value';
     }
     final lastThree = value.substring(value.length - 3);
     final rest = value.substring(0, value.length - 3);
@@ -93,15 +94,25 @@ class BalanceCalculator {
     }
     final restFormatted = buffer.toString().split('').reversed.join('');
     final sign = amount < 0 ? '-' : '';
-    return '$sign$currency $restFormatted,$lastThree';
+    return '$sign$displayCurrency $restFormatted,$lastThree';
   }
 
   /// Calculates the due status of a transaction.
-  static String getDueStatus(Transaction tx) {
+  static String getDueStatus(Transaction tx, double khataBalance) {
     if (tx.type == TransactionType.received ||
         tx.type == TransactionType.paid) {
       return '✅ Settled';
     }
+
+    final isReceivable = tx.type == TransactionType.gave || 
+        (tx.type == TransactionType.adjustment && tx.amount >= 0);
+    final isPayable = tx.type == TransactionType.borrowed || 
+        (tx.type == TransactionType.adjustment && tx.amount < 0);
+        
+    if ((isReceivable && khataBalance <= 0) || (isPayable && khataBalance >= 0)) {
+      return '✅ Settled';
+    }
+
     if (tx.dueDate == null) return '';
 
     final now = DateTime.now();
@@ -120,11 +131,21 @@ class BalanceCalculator {
   }
 
   /// Returns the details for a priority status badge.
-  static Map<String, dynamic> getDueBadgeDetails(Transaction tx) {
+  static Map<String, dynamic> getDueBadgeDetails(Transaction tx, double khataBalance) {
     if (tx.type == TransactionType.received ||
         tx.type == TransactionType.paid) {
       return {'label': '✅ Settled', 'color': 'green'};
     }
+
+    final isReceivable = tx.type == TransactionType.gave || 
+        (tx.type == TransactionType.adjustment && tx.amount >= 0);
+    final isPayable = tx.type == TransactionType.borrowed || 
+        (tx.type == TransactionType.adjustment && tx.amount < 0);
+        
+    if ((isReceivable && khataBalance <= 0) || (isPayable && khataBalance >= 0)) {
+      return {'label': '✅ Settled', 'color': 'green'};
+    }
+
     if (tx.dueDate == null) {
       return {'label': '⚪ No Due Date', 'color': 'grey'};
     }

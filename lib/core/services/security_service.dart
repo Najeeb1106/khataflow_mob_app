@@ -1,15 +1,13 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
 
 class SecurityService {
-  static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
+  static const _storage = FlutterSecureStorage();
 
   static final _localAuth = LocalAuthentication();
 
@@ -22,10 +20,22 @@ class SecurityService {
   static const _keyLastActive = 'last_active_timestamp';
   static const _keyDbEncryptionKey = 'database_encryption_key';
   static const _keyDeviceId = 'device_unique_id';
+  static const _keyRecoveryQuestion = 'recovery_question';
+  static const _keyHashedRecoveryAnswer = 'hashed_recovery_answer';
+  static const _keyFailedRecoveryAttempts = 'failed_recovery_attempts';
+  static const _keyRecoveryLockoutUntil = 'recovery_lockout_until_timestamp';
 
   /// Hashes a PIN using SHA-256 with a device-specific salt.
   static String hashPin(String pin, {required String salt}) {
     final bytes = utf8.encode('$pin:$salt');
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  /// Normalizes and hashes the recovery answer using SHA-256 with a device-specific salt.
+  static String hashAnswer(String answer, {required String salt}) {
+    final normalized = answer.trim().toLowerCase();
+    final bytes = utf8.encode('$normalized:$salt');
     final digest = sha256.convert(bytes);
     return digest.toString();
   }
@@ -35,6 +45,8 @@ class SecurityService {
     required String name,
     required String pin,
     required bool enableFingerprint,
+    required String recoveryQuestion,
+    required String recoveryAnswer,
   }) async {
     final deviceId = await getDeviceId();
     await _storage.write(key: _keyProfileName, value: name);
@@ -54,9 +66,28 @@ class SecurityService {
       key: _keySessionTimeout,
       value: '60',
     ); // default 1 minute (60s)
+    await _storage.write(
+      key: _keyRecoveryQuestion,
+      value: recoveryQuestion,
+    );
+    await _storage.write(
+      key: _keyHashedRecoveryAnswer,
+      value: hashAnswer(recoveryAnswer, salt: deviceId),
+    );
 
     // Generate database key if not already generated
     await getDatabaseKey();
+  }
+
+  /// Checks if a PIN hash exists in secure storage.
+  /// Rethrows any underlying exceptions (like Keystore corruption) to be handled at the UI layer.
+  static Future<bool> hasPinHash() async {
+    try {
+      final storedHash = await _storage.read(key: _keyHashedPin);
+      return storedHash != null && storedHash.isNotEmpty;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Verifies if a PIN is correct.
@@ -80,13 +111,21 @@ class SecurityService {
 
   /// Checks if a profile has been created.
   static Future<bool> hasProfile() async {
-    final name = await _storage.read(key: _keyProfileName);
-    return name != null && name.isNotEmpty;
+    try {
+      final name = await _storage.read(key: _keyProfileName);
+      return name != null && name.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
   }
 
   /// Retrieves the user's full name.
   static Future<String?> getProfileName() async {
-    return await _storage.read(key: _keyProfileName);
+    try {
+      return await _storage.read(key: _keyProfileName);
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Updates the user's full name.
@@ -115,12 +154,13 @@ class SecurityService {
 
   /// Checks if App Lock is enabled.
   static Future<bool> isAppLockEnabled() async {
-    return true;
+    final val = await _storage.read(key: _keyAppLockEnabled);
+    return val != 'false'; // default is true if not configured
   }
 
   /// Toggles App Lock.
   static Future<void> setAppLockEnabled(bool enabled) async {
-    await _storage.write(key: _keyAppLockEnabled, value: 'true');
+    await _storage.write(key: _keyAppLockEnabled, value: enabled.toString());
   }
 
   /// Gets the session timeout duration in seconds.
@@ -207,11 +247,128 @@ class SecurityService {
 
   /// Retrieves or securely generates a unique device identifier for backup mapping.
   static Future<String> getDeviceId() async {
-    var id = await _storage.read(key: _keyDeviceId);
-    if (id == null) {
-      id = const Uuid().v4();
-      await _storage.write(key: _keyDeviceId, value: id);
+    try {
+      var id = await _storage.read(key: _keyDeviceId);
+      if (id == null) {
+        id = const Uuid().v4();
+        await _storage.write(key: _keyDeviceId, value: id);
+      }
+      return id;
+    } catch (e) {
+      rethrow;
     }
-    return id;
+  }
+
+  /// Saves the custom recovery question and answer securely.
+  static Future<void> saveRecoveryQuestionAndAnswer(String question, String answer) async {
+    final deviceId = await getDeviceId();
+    await _storage.write(key: _keyRecoveryQuestion, value: question);
+    await _storage.write(
+      key: _keyHashedRecoveryAnswer,
+      value: hashAnswer(answer, salt: deviceId),
+    );
+  }
+
+  /// Retrieves the custom recovery question.
+  static Future<String?> getRecoveryQuestion() async {
+    return await _storage.read(key: _keyRecoveryQuestion);
+  }
+
+  /// Checks if PIN recovery is currently locked out.
+  static Future<bool> isRecoveryLockedOut() async {
+    final lockoutStr = await _storage.read(key: _keyRecoveryLockoutUntil);
+    if (lockoutStr == null) return false;
+    try {
+      final lockoutTime = DateTime.parse(lockoutStr);
+      return DateTime.now().isBefore(lockoutTime);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Gets the remaining lockout time in seconds.
+  static Future<int> getRemainingLockoutTimeInSeconds() async {
+    final lockoutStr = await _storage.read(key: _keyRecoveryLockoutUntil);
+    if (lockoutStr == null) return 0;
+    try {
+      final lockoutTime = DateTime.parse(lockoutStr);
+      final difference = lockoutTime.difference(DateTime.now()).inSeconds;
+      return difference > 0 ? difference : 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Gets the current count of failed recovery attempts.
+  static Future<int> getFailedRecoveryAttempts() async {
+    final countStr = await _storage.read(key: _keyFailedRecoveryAttempts);
+    if (countStr == null) return 0;
+    return int.tryParse(countStr) ?? 0;
+  }
+
+  /// Resets the count of failed recovery attempts and clears lockout.
+  static Future<void> resetRecoveryAttempts() async {
+    await _storage.delete(key: _keyFailedRecoveryAttempts);
+    await _storage.delete(key: _keyRecoveryLockoutUntil);
+  }
+
+  /// Verifies if the entered recovery answer matches the stored hashed answer.
+  /// Locks the user out for 5 minutes if there are 5 consecutive failures.
+  static Future<bool> verifyRecoveryAnswer(String answer) async {
+    if (await isRecoveryLockedOut()) {
+      return false;
+    }
+
+    final storedHash = await _storage.read(key: _keyHashedRecoveryAnswer);
+    if (storedHash == null) return false;
+
+    final deviceId = await getDeviceId();
+    final isCorrect = hashAnswer(answer, salt: deviceId) == storedHash;
+
+    if (isCorrect) {
+      await resetRecoveryAttempts();
+      return true;
+    } else {
+      final currentAttempts = await getFailedRecoveryAttempts() + 1;
+      await _storage.write(key: _keyFailedRecoveryAttempts, value: currentAttempts.toString());
+      if (currentAttempts >= 5) {
+        final lockoutUntil = DateTime.now().add(const Duration(minutes: 5));
+        await _storage.write(key: _keyRecoveryLockoutUntil, value: lockoutUntil.toIso8601String());
+      }
+      return false;
+    }
+  }
+
+  /// Resets the PIN directly without requiring the old PIN.
+  static Future<void> resetPin(String newPin) async {
+    final deviceId = await getDeviceId();
+    await _storage.write(
+      key: _keyHashedPin,
+      value: hashPin(newPin, salt: deviceId),
+    );
+    await resetRecoveryAttempts();
+  }
+
+  static Future<Map<String, bool>> debugGetStorageStatus() async {
+    try {
+      final name = await _storage.read(key: _keyProfileName);
+      final pin = await _storage.read(key: _keyHashedPin);
+      final question = await _storage.read(key: _keyRecoveryQuestion);
+      final finger = await _storage.read(key: _keyFingerprintEnabled);
+      return {
+        'hasProfileName': name != null && name.isNotEmpty,
+        'hasHashedPin': pin != null && pin.isNotEmpty,
+        'hasRecoveryQuestion': question != null && question.isNotEmpty,
+        'hasFingerprintEnabled': finger == 'true',
+      };
+    } catch (e) {
+      debugPrint('[DEBUG-SEC] Error reading storage status: $e');
+      return {
+        'hasProfileName': false,
+        'hasHashedPin': false,
+        'hasRecoveryQuestion': false,
+        'hasFingerprintEnabled': false,
+      };
+    }
   }
 }

@@ -7,6 +7,8 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// App-level build directory redirection removed
+
 val keystoreProperties = Properties().apply {
     val keystorePropertiesFile = rootProject.file("key.properties")
     if (keystorePropertiesFile.exists()) {
@@ -78,4 +80,20 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
+tasks.matching { it.name.startsWith("assemble") }.configureEach {
+    doLast {
+        val flutterApkDir = file("${project.layout.buildDirectory.get().asFile}/outputs/flutter-apk")
+        val destDir = file("${rootDir}/../build/app/outputs/flutter-apk")
+        if (flutterApkDir.exists()) {
+            destDir.mkdirs()
+            flutterApkDir.listFiles()?.forEach { file ->
+                if (file.isFile && file.name.endsWith(".apk")) {
+                    file.copyTo(File(destDir, file.name), overwrite = true)
+                    println("Successfully copied APK to Flutter build directory: ${destDir}/${file.name}")
+                }
+            }
+        }
+    }
 }

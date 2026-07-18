@@ -7,6 +7,7 @@ import 'dart:io';
 import '../../features/people/data/models/person.dart';
 import '../../features/khata/data/models/khata.dart';
 import '../../features/transactions/data/models/transaction.dart';
+import '../utils/phone_formatter.dart';
 
 class PdfService {
   Future<Uint8List> generateStatement({
@@ -259,7 +260,7 @@ class PdfService {
                       if (person.phone != null && person.phone!.isNotEmpty) ...[
                         pw.SizedBox(height: 3),
                         pw.Text(
-                          person.phone!,
+                          PhoneFormatter.format(person.phone),
                           style: const pw.TextStyle(
                             fontSize: 10,
                             color: PdfColor.fromInt(0xFF475569),

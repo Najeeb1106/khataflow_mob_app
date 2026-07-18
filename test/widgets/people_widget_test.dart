@@ -95,7 +95,7 @@ void main() {
 
       // Verify contact shows in list
       expect(find.text('Farhan Saeed'), findsOneWidget);
-      expect(find.text('03451112222'), findsOneWidget);
+      expect(find.text('0345 1112222'), findsOneWidget);
 
       // Verify floating button is visible and tap navigates
       expect(find.byType(FloatingActionButton), findsOneWidget);

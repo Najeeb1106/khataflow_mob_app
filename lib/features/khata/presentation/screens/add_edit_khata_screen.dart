@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/khata.dart';
 import '../providers/khata_providers.dart';
+import '../../../../core/presentation/design_system.dart';
+import '../../../../core/presentation/widgets/shared_widgets.dart';
 
 class AddEditKhataScreen extends ConsumerStatefulWidget {
   final String personUuid;
@@ -62,10 +64,9 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
     try {
       final repo = ref.read(khataRepositoryProvider);
       final existingKhatas = await repo.getKhatasForPerson(widget.personUuid);
-      
+
       final proposedTitle = _titleController.text.trim().toLowerCase();
       final isDuplicate = existingKhatas.any((k) {
-        // When editing an existing Khata, ignore the current Khata's own UUID
         if (widget.khataUuid != null && k.uuid == widget.khataUuid) {
           return false;
         }
@@ -74,11 +75,10 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
 
       if (isDuplicate) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('A Khata with this name already exists for this contact.'),
-              backgroundColor: Colors.redAccent,
-            ),
+          AppSnackbar.show(
+            context,
+            'A Khata with this name already exists for this contact.',
+            type: AppSnackbarType.error,
           );
         }
         return;
@@ -123,7 +123,9 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: Text(title)),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(
+          child: CircularProgressIndicator(color: AppDesign.primaryEmerald),
+        ),
       );
     }
 
@@ -132,23 +134,28 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.check, color: Colors.teal),
+            icon: const Icon(Icons.check_rounded, color: AppDesign.primaryEmerald),
             onPressed: _save,
+            tooltip: 'Save',
           ),
         ],
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDesign.space24,
+            vertical: AppDesign.space24,
+          ),
           children: [
             TextFormField(
               controller: _titleController,
+              textCapitalization: TextCapitalization.words,
               decoration: InputDecoration(
                 labelText: 'Khata Title (e.g. Shop Items, Personal Loan) *',
-                prefixIcon: const Icon(Icons.account_balance_wallet),
+                prefixIcon: const Icon(Icons.account_balance_wallet_rounded),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppDesign.borderMedium,
                 ),
               ),
               validator: (val) {
@@ -158,35 +165,24 @@ class _AddEditKhataScreenState extends ConsumerState<AddEditKhataScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppDesign.space24),
             TextFormField(
               controller: _notesController,
               maxLines: 3,
               decoration: InputDecoration(
                 labelText: 'Notes (Optional)',
-                prefixIcon: const Icon(Icons.notes),
+                prefixIcon: const Icon(Icons.notes_rounded),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppDesign.borderMedium,
                 ),
               ),
             ),
-            const SizedBox(height: 40),
-            SizedBox(
-              height: 56,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: _save,
-                child: const Text(
-                  'Save Khata',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
+            const SizedBox(height: AppDesign.space32),
+            AppButton(
+              label: widget.khataUuid == null ? 'Save Khata' : 'Update Khata',
+              onPressed: _save,
+              isFullWidth: true,
+              backgroundColor: AppDesign.primaryEmerald,
             ),
           ],
         ),

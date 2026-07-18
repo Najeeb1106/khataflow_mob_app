@@ -14,6 +14,7 @@ import '../../../features/notifications/presentation/screens/notifications_scree
 import '../../../features/notifications/presentation/screens/notification_settings_screen.dart';
 import '../../../features/reports/presentation/screens/statement_preview_screen.dart';
 import '../../../features/trash/presentation/screens/trash_screen.dart';
+import '../../../features/settings/presentation/screens/backup_restore_screen.dart';
 
 import '../../../features/dashboard/presentation/screens/global_search_screen.dart';
 
@@ -26,7 +27,10 @@ final goRouter = GoRouter(
     ),
     GoRoute(
       path: '/setup-profile',
-      builder: (context, state) => const LocalAuthSetupScreen(),
+      builder: (context, state) {
+        final mode = state.uri.queryParameters['mode'];
+        return LocalAuthSetupScreen(mode: mode);
+      },
     ),
     GoRoute(path: '/unlock', builder: (context, state) => const UnlockScreen()),
     GoRoute(
@@ -108,6 +112,10 @@ final goRouter = GoRouter(
     GoRoute(
       path: '/settings/security',
       builder: (context, state) => const SecuritySettingsScreen(),
+    ),
+    GoRoute(
+      path: '/settings/backup',
+      builder: (context, state) => const BackupRestoreScreen(),
     ),
   ],
 );

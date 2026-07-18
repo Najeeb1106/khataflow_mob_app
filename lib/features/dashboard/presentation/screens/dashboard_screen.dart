@@ -142,8 +142,8 @@ class DashboardScreen extends ConsumerWidget {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(
-              horizontal: AppDesign.space12,
-              vertical: AppDesign.space8,
+              horizontal: AppDesign.space24,
+              vertical: AppDesign.space16,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,7 +407,7 @@ class DashboardScreen extends ConsumerWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Receivables Ratio',
+                                  'Receivables vs Payables',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: isDark
@@ -417,7 +417,9 @@ class DashboardScreen extends ConsumerWidget {
                                   ),
                                 ),
                                 Text(
-                                  '${(receivableRatio * 100).toStringAsFixed(0)}% vs ${(payableRatio * 100).toStringAsFixed(0)}%',
+                                  summary.totalReceivable == 0 && summary.totalPayable == 0
+                                      ? 'No active balance yet'
+                                      : 'Receive ${(receivableRatio * 100).toStringAsFixed(0)}% • Give ${(payableRatio * 100).toStringAsFixed(0)}%',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: isDark
@@ -429,32 +431,36 @@ class DashboardScreen extends ConsumerWidget {
                               ],
                             ),
                             const SizedBox(height: 4),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: SizedBox(
-                                height: 6,
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      flex: (receivableRatio * 100)
-                                          .toInt()
-                                          .clamp(1, 99),
-                                      child: Container(
-                                        color: AppDesign.primaryEmerald,
-                                      ),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final totalWidth = constraints.maxWidth;
+                                final hasActiveBalance = summary.totalReceivable > 0 || summary.totalPayable > 0;
+                                final targetGreenWidth = hasActiveBalance ? totalWidth * receivableRatio : 0.0;
+                                final backgroundColor = hasActiveBalance 
+                                    ? AppDesign.redPayable 
+                                    : (isDark ? Colors.grey.shade800 : Colors.grey.shade300);
+
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    width: totalWidth,
+                                    height: 8,
+                                    color: backgroundColor,
+                                    child: Stack(
+                                      children: [
+                                        if (hasActiveBalance)
+                                          AnimatedContainer(
+                                            duration: const Duration(milliseconds: 400),
+                                            curve: Curves.easeInOut,
+                                            width: targetGreenWidth,
+                                            height: 8,
+                                            color: AppDesign.primaryEmerald,
+                                          ),
+                                      ],
                                     ),
-                                    Expanded(
-                                      flex: (payableRatio * 100).toInt().clamp(
-                                        1,
-                                        99,
-                                      ),
-                                      child: Container(
-                                        color: AppDesign.redPayable,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -485,6 +491,61 @@ class DashboardScreen extends ConsumerWidget {
                         final dueTodayTxs = stats['dueToday'] ?? [];
                         final dueTomorrowTxs = stats['dueTomorrow'] ?? [];
                         final upcomingTxs = stats['upcoming'] ?? [];
+
+                        // ── Empty state: all dues are zero ───────────────────
+                        if (overdueTxs.isEmpty &&
+                            dueTodayTxs.isEmpty &&
+                            dueTomorrowTxs.isEmpty &&
+                            upcomingTxs.isEmpty) {
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 24,
+                              horizontal: 16,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppDesign.greenReceivable.withValues(
+                                alpha: isDark ? 0.05 : 0.04,
+                              ),
+                              borderRadius: AppDesign.borderMedium,
+                              border: Border.all(
+                                color: AppDesign.greenReceivable.withValues(
+                                  alpha: isDark ? 0.15 : 0.15,
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                const Text(
+                                  '🎉',
+                                  style: TextStyle(fontSize: 36),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'No dues currently.',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark
+                                        ? Colors.green.shade300
+                                        : Colors.green.shade800,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'All accounts are settled or have no upcoming due dates.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
 
                         final overdueTotal = overdueTxs.fold<double>(
                           0,

@@ -8,6 +8,7 @@ import '../../../dashboard/presentation/providers/dashboard_providers.dart';
 import 'package:khata_app/features/settings/presentation/providers/settings_providers.dart';
 import '../../../../core/presentation/design_system.dart';
 import '../../../../core/presentation/widgets/shared_widgets.dart';
+import '../../../../core/utils/phone_formatter.dart';
 import '../providers/reports_providers.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
@@ -44,8 +45,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         children: [
           // Categories Header Grid
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            height: 48,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDesign.space24,
+              vertical: AppDesign.space8,
+            ),
+            height: 52,
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
@@ -68,21 +72,44 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   }
 
   Widget _buildCategoryTab(String category, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = _selectedCategory == category;
     return Padding(
       padding: const EdgeInsets.only(right: 6.0),
       child: ChoiceChip(
         avatar: Icon(
           icon,
-          color: isSelected ? Colors.white : AppDesign.primaryEmerald,
+          color: isSelected
+              ? Colors.white
+              : (isDark ? Colors.grey[400] : AppDesign.primaryEmerald),
           size: 14,
         ),
-        label: Text(category, style: const TextStyle(fontSize: 11)),
+        label: Text(
+          category,
+          style: TextStyle(
+            fontSize: 11,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? Colors.grey[300] : Colors.black87),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
         selected: isSelected,
         selectedColor: AppDesign.primaryEmerald,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: isDark ? AppDesign.darkCard : null,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: isSelected
+                ? AppDesign.primaryEmerald
+                : (isDark ? AppDesign.darkBorder : Colors.grey.shade300),
+            width: 1,
+          ),
+        ),
         labelStyle: TextStyle(
-          color: isSelected ? Colors.white : Colors.black87,
+          color: isSelected
+              ? Colors.white
+              : (isDark ? Colors.grey[300] : Colors.black87),
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
         onSelected: (val) {
@@ -119,7 +146,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDesign.space24,
+            vertical: AppDesign.space8,
+          ),
           child: TextField(
             decoration: InputDecoration(
               hintText: 'Search contacts...',
@@ -175,8 +205,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 child: ListView.builder(
                   itemCount: filtered.length,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
+                    horizontal: AppDesign.space24,
+                    vertical: AppDesign.space8,
                   ),
                   itemBuilder: (context, index) {
                     final person = filtered[index];
@@ -212,7 +242,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                               ),
                             ),
                             subtitle: Text(
-                              person.phone ?? 'No phone number',
+                              person.phone != null && person.phone!.isNotEmpty
+                                  ? PhoneFormatter.format(person.phone)
+                                  : 'No phone number',
                               style: const TextStyle(fontSize: 11),
                             ),
                             trailing: Icon(
@@ -273,7 +305,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
         return ListView.builder(
           itemCount: people.length,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDesign.space24,
+            vertical: AppDesign.space8,
+          ),
           itemBuilder: (context, index) {
             final person = people[index];
             final balanceAsync = ref.watch(personBalanceProvider(person.uuid));
@@ -346,10 +381,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
                   items.add(
                     Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                      margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         dense: true,
                         leading: CircleAvatar(
@@ -401,7 +433,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             }
 
             return ListView(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDesign.space24,
+                vertical: AppDesign.space8,
+              ),
               children: items,
             );
           },
@@ -431,7 +466,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
         return ListView.builder(
           itemCount: insights.length,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDesign.space24,
+            vertical: AppDesign.space8,
+          ),
           itemBuilder: (context, index) {
             final ins = insights[index];
             final isPositive = ins.netCashflow >= 0;
@@ -529,6 +567,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   // 5. Export History Report Category
   Widget _buildExportHistoryReport(bool isDark) {
     final history = ref.watch(reportHistoryProvider);
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     // Calculate summaries
     final totalReports = history.length;
@@ -558,72 +597,76 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     return Column(
       children: [
         // Summary Header Cards
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: isDark ? AppDesign.darkCard : Colors.grey.shade50,
-            border: Border(
-              bottom: BorderSide(
-                color: isDark ? AppDesign.darkBorder : AppDesign.lightBorder,
+        if (!isKeyboardOpen)
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDark ? AppDesign.darkCard : Colors.grey.shade50,
+              border: Border(
+                bottom: BorderSide(
+                  color: isDark ? AppDesign.darkBorder : AppDesign.lightBorder,
+                ),
               ),
             ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'TOTAL EXPORTS',
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.bold,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'TOTAL EXPORTS',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$totalReports Statement${totalReports == 1 ? "" : "s"}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                      const SizedBox(height: 2),
+                      Text(
+                        '$totalReports Statement${totalReports == 1 ? "" : "s"}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const Text(
-                      'LAST EXPORT DATE',
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text(
+                        'LAST EXPORT DATE',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      lastExportDateStr,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                        color: AppDesign.primaryTeal,
+                      const SizedBox(height: 2),
+                      Text(
+                        lastExportDateStr,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          color: AppDesign.primaryTeal,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
 
         // Search and Sort controls
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDesign.space24,
+            vertical: AppDesign.space8,
+          ),
           child: Row(
             children: [
               Expanded(
@@ -691,8 +734,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               : ListView.builder(
                   itemCount: filteredHistory.length,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
+                    horizontal: AppDesign.space24,
+                    vertical: AppDesign.space8,
                   ),
                   itemBuilder: (context, index) {
                     final log = filteredHistory[index];

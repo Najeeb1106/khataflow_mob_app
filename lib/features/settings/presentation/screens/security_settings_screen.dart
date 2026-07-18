@@ -13,14 +13,18 @@ class SecuritySettingsScreen extends StatefulWidget {
 
 class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   bool _fingerprintEnabled = false;
+  bool _appLockEnabled = true;
   int _sessionTimeout = 60; // default 60s (1 min)
   bool _isFingerprint = false;
   bool _biometricsSupported = false;
-  String _lastAuthTime = 'Just now';
 
   final _oldPinController = TextEditingController();
   final _newPinController = TextEditingController();
   final _confirmPinController = TextEditingController();
+  final _recoveryQuestionController = TextEditingController();
+  final _recoveryAnswerController = TextEditingController();
+  String _selectedQuestion = "What was my first school's name?";
+  bool _isCustomQuestion = false;
 
   @override
   void initState() {
@@ -33,11 +37,14 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     _oldPinController.dispose();
     _newPinController.dispose();
     _confirmPinController.dispose();
+    _recoveryQuestionController.dispose();
+    _recoveryAnswerController.dispose();
     super.dispose();
   }
 
   Future<void> _loadSettings() async {
     final finger = await SecurityService.isFingerprintEnabled();
+    final lockEnabled = await SecurityService.isAppLockEnabled();
     final timeout = await SecurityService.getSessionTimeout();
 
     bool isFingerprint = false;
@@ -57,11 +64,10 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
     setState(() {
       _fingerprintEnabled = finger;
+      _appLockEnabled = lockEnabled;
       _sessionTimeout = timeout;
       _isFingerprint = isFingerprint;
       _biometricsSupported = biometricsSupported;
-      _lastAuthTime =
-          '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}';
     });
   }
 
@@ -184,6 +190,194 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     }
   }
 
+  Future<void> _toggleAppLock(bool value) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!value) {
+      // Disabling app lock requires PIN verification
+      final pinVerified = await _verifyPinDialog('Verify PIN to Disable App Lock');
+      if (pinVerified == true) {
+        await SecurityService.setAppLockEnabled(false);
+        setState(() {
+          _appLockEnabled = false;
+        });
+        messenger.showSnackBar(
+          const SnackBar(content: Text('App Lock disabled successfully.')),
+        );
+      }
+    } else {
+      // Enabling App Lock does not require old PIN verification
+      await SecurityService.setAppLockEnabled(true);
+      setState(() {
+        _appLockEnabled = true;
+      });
+      messenger.showSnackBar(
+        const SnackBar(content: Text('App Lock enabled successfully.')),
+      );
+    }
+  }
+
+  Future<bool?> _verifyPinDialog(String title) async {
+    final controller = TextEditingController();
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AnimatedPadding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.decelerate,
+        child: AlertDialog(
+          scrollable: true,
+          shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          content: TextField(
+            controller: controller,
+            obscureText: true,
+            keyboardType: TextInputType.number,
+            maxLength: 4,
+            decoration: const InputDecoration(labelText: 'Enter PIN', border: OutlineInputBorder()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppDesign.primaryEmerald,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade800,
+                disabledForegroundColor: Colors.grey.shade500,
+              ),
+              onPressed: () async {
+                final isValid = await SecurityService.verifyPin(controller.text);
+                if (isValid) {
+                  Navigator.pop(context, true);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Incorrect PIN.')),
+                  );
+                }
+              },
+              child: const Text('Verify'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showChangeRecoveryQuestionDialog() async {
+    // First, verify PIN
+    final pinVerified = await _verifyPinDialog('Verify PIN to Change Recovery Question');
+    if (pinVerified != true) return;
+
+    // Show the custom dialog to input question and answer
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          scrollable: true,
+          shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
+          title: const Text('Change Recovery Question', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                isExpanded: true,
+                value: _selectedQuestion,
+                decoration: const InputDecoration(
+                  labelText: 'Question Presets',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: "What was my first school's name?",
+                    child: Text("What was my first school's name?", style: TextStyle(fontSize: 12)),
+                  ),
+                  DropdownMenuItem(
+                    value: "What nickname did my grandfather call me?",
+                    child: Text("What nickname did my grandfather call me?", style: TextStyle(fontSize: 12)),
+                  ),
+                  DropdownMenuItem(
+                    value: "What is my favorite cricket team?",
+                    child: Text("What is my favorite cricket team?", style: TextStyle(fontSize: 12)),
+                  ),
+                  DropdownMenuItem(
+                    value: "Write custom question...",
+                    child: Text("Write custom question...", style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    setDialogState(() {
+                      _selectedQuestion = val;
+                      _isCustomQuestion = val == "Write custom question...";
+                    });
+                  }
+                },
+              ),
+              if (_isCustomQuestion) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _recoveryQuestionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Custom Recovery Question',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: _recoveryAnswerController,
+                decoration: const InputDecoration(
+                  labelText: 'Recovery Answer',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                _recoveryQuestionController.clear();
+                _recoveryAnswerController.clear();
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppDesign.primaryEmerald),
+              onPressed: () async {
+                final question = _isCustomQuestion ? _recoveryQuestionController.text.trim() : _selectedQuestion;
+                final answer = _recoveryAnswerController.text.trim();
+
+                if (question.isEmpty || answer.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please fill out all fields.')),
+                  );
+                  return;
+                }
+
+                final messenger = ScaffoldMessenger.of(context);
+                final nav = Navigator.of(context);
+
+                await SecurityService.saveRecoveryQuestionAndAnswer(question, answer);
+                
+                nav.pop();
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Recovery question updated successfully.')),
+                );
+                _recoveryQuestionController.clear();
+                _recoveryAnswerController.clear();
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -195,128 +389,17 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDesign.space24,
+          vertical: AppDesign.space16,
+        ),
         children: [
-          // Encryption Banner
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppDesign.primaryEmerald.withValues(alpha: 0.05),
-              borderRadius: AppDesign.borderMedium,
-              border: Border.all(
-                color: AppDesign.primaryEmerald.withValues(alpha: 0.15),
-              ),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDesign.space12,
+              vertical: 2,
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.enhanced_encryption_rounded,
-                  color: AppDesign.primaryEmerald,
-                  size: 20,
-                ),
-                const SizedBox(width: AppDesign.space12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'AES-256 Encryption Active',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Your database and authentication parameters are securely hashed and stored locally.',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isDark
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-            child: Text(
-              'AUTHENTICATION STATUS',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-                color: Colors.grey,
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-          Card(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            child: Column(
-              children: [
-                ListTile(
-                  dense: true,
-                  leading: Icon(
-                    Icons.pin_rounded,
-                    color: AppDesign.primaryEmerald,
-                    size: 20,
-                  ),
-                  title: const Text('PIN Protection', style: TextStyle(fontSize: 13)),
-                  subtitle: const Text(
-                    'Authorized configuration PIN is enabled',
-                    style: TextStyle(fontSize: 11),
-                  ),
-                  trailing: const StatusBadge(
-                    label: 'Enabled',
-                    color: AppDesign.greenReceivable,
-                  ),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  dense: true,
-                  leading: Icon(
-                    Icons.fingerprint_rounded,
-                    color: AppDesign.primaryEmerald,
-                    size: 20,
-                  ),
-                  title: const Text('Biometric Hardware', style: TextStyle(fontSize: 13)),
-                  subtitle: Text(
-                    _biometricsSupported
-                        ? 'Supported on this device'
-                        : 'Unsupported on this device',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  trailing: StatusBadge(
-                    label: _biometricsSupported ? 'Ready' : 'Not Found',
-                    color: _biometricsSupported
-                        ? AppDesign.greenReceivable
-                        : AppDesign.grayNeutral,
-                  ),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  dense: true,
-                  leading: Icon(
-                    Icons.history_toggle_off_rounded,
-                    color: AppDesign.primaryTeal,
-                    size: 20,
-                  ),
-                  title: const Text('Last Session Auth', style: TextStyle(fontSize: 13)),
-                  subtitle: Text('Last active: $_lastAuthTime', style: const TextStyle(fontSize: 11)),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
             child: Text(
               'AUTHORIZATION CONTROLS',
               style: TextStyle(
@@ -346,6 +429,41 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   trailing: const Icon(Icons.arrow_forward_ios, size: 12),
                   onTap: _showChangePinDialog,
                 ),
+                const Divider(height: 1),
+                ListTile(
+                  dense: true,
+                  leading: Icon(
+                    Icons.help_center_rounded,
+                    color: AppDesign.primaryEmerald,
+                    size: 20,
+                  ),
+                  title: const Text('Change Recovery Question', style: TextStyle(fontSize: 13)),
+                  subtitle: const Text(
+                    'Update your backup PIN recovery question',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 12),
+                  onTap: _showChangeRecoveryQuestionDialog,
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  dense: true,
+                  secondary: Icon(
+                    Icons.lock_rounded,
+                    color: AppDesign.primaryEmerald,
+                    size: 20,
+                  ),
+                  activeColor: AppDesign.primaryEmerald,
+                  title: const Text('App Lock Active', style: TextStyle(fontSize: 13)),
+                  subtitle: const Text(
+                    'Require PIN authentication on startup/resume',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                  value: _appLockEnabled,
+                  onChanged: (val) {
+                    _toggleAppLock(val);
+                  },
+                ),
                 if (_biometricsSupported || _isFingerprint) ...[
                   const Divider(height: 1),
                   SwitchListTile(
@@ -370,8 +488,11 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           ),
 
           const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDesign.space12,
+              vertical: 2,
+            ),
             child: Text(
               'AUTO-LOCK PREFERENCES',
               style: TextStyle(

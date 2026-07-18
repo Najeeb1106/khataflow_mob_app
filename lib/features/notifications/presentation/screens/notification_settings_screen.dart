@@ -25,8 +25,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(
-          vertical: 8,
-          horizontal: 8,
+          horizontal: AppDesign.space24,
+          vertical: AppDesign.space16,
         ),
         children: [
           // Info description card

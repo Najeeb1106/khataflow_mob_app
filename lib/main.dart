@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
 import 'core/database/isar_service.dart';
 import 'core/router/router.dart';
 import 'core/services/notification_service.dart';
@@ -16,9 +20,52 @@ void main() async {
   // Initialize Isar Local Database
   await IsarService.initialize();
 
+  // Load AppSettings from disk
+  var initialSettings = await SettingsNotifier.loadInitialSettings();
+
+  // Migrate profileName from secure storage if it exists there but not in AppSettings
+  if (initialSettings.profileName == null || initialSettings.profileName!.isEmpty) {
+    try {
+      final secureName = await SecurityService.getProfileName();
+      if (secureName != null && secureName.isNotEmpty) {
+        initialSettings = initialSettings.copyWith(
+          profileName: secureName,
+          isSecuritySetupCompleted: true,
+          hasCompletedOnboarding: true,
+        );
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/app_settings.json');
+        await file.writeAsString(jsonEncode(initialSettings.toJson()));
+        debugPrint('[MIGRATION] Migrated profileName from secure storage to AppSettings');
+      }
+    } catch (e) {
+      debugPrint('[MIGRATION] Failed to migrate profileName: $e');
+    }
+  }
+
+  // Migrate isSecuritySetupCompleted for existing users who already have a profile
+  if (!initialSettings.isSecuritySetupCompleted && initialSettings.profileName != null && initialSettings.profileName!.isNotEmpty) {
+    initialSettings = initialSettings.copyWith(
+      isSecuritySetupCompleted: true,
+      hasCompletedOnboarding: true,
+    );
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/app_settings.json');
+      await file.writeAsString(jsonEncode(initialSettings.toJson()));
+      debugPrint('[MIGRATION] Auto-completed isSecuritySetupCompleted for existing user');
+    } catch (e) {
+      debugPrint('[MIGRATION] Failed to update isSecuritySetupCompleted: $e');
+    }
+  }
+
   // Initialize Notification Service
   try {
     await NotificationService().initialize();
+    if (kDebugMode) {
+      final count = await NotificationService().getPendingNotificationsCount();
+      debugPrint("Startup Audit: Pending Notification Count = $count");
+    }
   } catch (e) {
     debugPrint("Failed to initialize Notification Service: $e");
   }
@@ -30,7 +77,14 @@ void main() async {
     debugPrint("Failed to run Database Auto-Purge: $e");
   }
 
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        settingsProvider.overrideWith((ref) => SettingsNotifier(initialSettings)),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends ConsumerStatefulWidget {
@@ -55,10 +109,20 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _checkInitialLock() async {
-    final hasProfile = await SecurityService.hasProfile();
-    if (!hasProfile) {
+    final settings = ref.read(settingsProvider);
+    if (!settings.hasCompletedOnboarding) {
       goRouter.go('/onboarding');
+      return;
     }
+    if (!settings.isSecuritySetupCompleted) {
+      goRouter.go('/setup-profile');
+      return;
+    }
+    if (settings.profileName == null || settings.profileName!.trim().isEmpty) {
+      goRouter.go('/setup-profile');
+      return;
+    }
+    // Continue startup flow (stays on /unlock screen)
   }
 
   @override

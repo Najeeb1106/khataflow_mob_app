@@ -78,12 +78,22 @@ final personNextDueProvider = FutureProvider.family<DateTime?, String>((
       txs = await txRepo.getTransactionsForKhata(khata.uuid);
     }
 
+    final khataBalance = BalanceCalculator.calculate(txs);
+
     for (final tx in txs) {
       if (tx.dueDate == null) continue;
       // Skip settled transactions
       if (tx.type == TransactionType.received ||
           tx.type == TransactionType.paid)
         continue;
+
+      final isReceivable = tx.type == TransactionType.gave || 
+          (tx.type == TransactionType.adjustment && tx.amount >= 0);
+      final isPayable = tx.type == TransactionType.borrowed || 
+          (tx.type == TransactionType.adjustment && tx.amount < 0);
+      if ((isReceivable && khataBalance <= 0) || (isPayable && khataBalance >= 0)) {
+        continue;
+      }
 
       final due = DateTime(
         tx.dueDate!.year,
@@ -193,6 +203,14 @@ final personFinancialSummaryProvider =
           if (tx.dueDate != null &&
               tx.type != TransactionType.received &&
               tx.type != TransactionType.paid) {
+            final isReceivable = tx.type == TransactionType.gave || 
+                (tx.type == TransactionType.adjustment && tx.amount >= 0);
+            final isPayable = tx.type == TransactionType.borrowed || 
+                (tx.type == TransactionType.adjustment && tx.amount < 0);
+            if ((isReceivable && khataBalance <= 0) || (isPayable && khataBalance >= 0)) {
+              continue;
+            }
+
             final due = DateTime(
               tx.dueDate!.year,
               tx.dueDate!.month,

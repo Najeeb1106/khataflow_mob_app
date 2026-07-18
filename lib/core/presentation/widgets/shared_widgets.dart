@@ -110,7 +110,6 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final primaryColor = backgroundColor ?? AppDesign.primaryEmerald;
     final textCol = foregroundColor ?? Colors.white;
 
@@ -385,7 +384,6 @@ class AppSnackbar {
         icon = Icons.warning_rounded;
         break;
       case AppSnackbarType.info:
-      default:
         color = Colors.blue;
         icon = Icons.info_rounded;
         break;

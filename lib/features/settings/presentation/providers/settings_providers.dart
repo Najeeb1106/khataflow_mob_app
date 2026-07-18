@@ -11,6 +11,9 @@ class AppSettings {
   final bool dueDateAlertsEnabled;
   final bool overdueNoticesEnabled;
   final bool dailySummaryEnabled;
+  final bool hasCompletedOnboarding;
+  final String? profileName;
+  final bool isSecuritySetupCompleted;
 
   const AppSettings({
     required this.themeMode,
@@ -19,6 +22,9 @@ class AppSettings {
     required this.dueDateAlertsEnabled,
     required this.overdueNoticesEnabled,
     required this.dailySummaryEnabled,
+    required this.hasCompletedOnboarding,
+    this.profileName,
+    required this.isSecuritySetupCompleted,
   });
 
   AppSettings copyWith({
@@ -28,6 +34,9 @@ class AppSettings {
     bool? dueDateAlertsEnabled,
     bool? overdueNoticesEnabled,
     bool? dailySummaryEnabled,
+    bool? hasCompletedOnboarding,
+    String? profileName,
+    bool? isSecuritySetupCompleted,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -36,6 +45,9 @@ class AppSettings {
       dueDateAlertsEnabled: dueDateAlertsEnabled ?? this.dueDateAlertsEnabled,
       overdueNoticesEnabled: overdueNoticesEnabled ?? this.overdueNoticesEnabled,
       dailySummaryEnabled: dailySummaryEnabled ?? this.dailySummaryEnabled,
+      hasCompletedOnboarding: hasCompletedOnboarding ?? this.hasCompletedOnboarding,
+      profileName: profileName ?? this.profileName,
+      isSecuritySetupCompleted: isSecuritySetupCompleted ?? this.isSecuritySetupCompleted,
     );
   }
 
@@ -46,6 +58,9 @@ class AppSettings {
     'dueDateAlertsEnabled': dueDateAlertsEnabled,
     'overdueNoticesEnabled': overdueNoticesEnabled,
     'dailySummaryEnabled': dailySummaryEnabled,
+    'hasCompletedOnboarding': hasCompletedOnboarding,
+    'profileName': profileName,
+    'isSecuritySetupCompleted': isSecuritySetupCompleted,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) {
@@ -63,6 +78,9 @@ class AppSettings {
       dueDateAlertsEnabled: json['dueDateAlertsEnabled'] ?? true,
       overdueNoticesEnabled: json['overdueNoticesEnabled'] ?? true,
       dailySummaryEnabled: json['dailySummaryEnabled'] ?? true,
+      hasCompletedOnboarding: json['hasCompletedOnboarding'] ?? false,
+      profileName: json['profileName'],
+      isSecuritySetupCompleted: json['isSecuritySetupCompleted'] ?? false,
     );
   }
 
@@ -73,22 +91,62 @@ class AppSettings {
     dueDateAlertsEnabled: true,
     overdueNoticesEnabled: true,
     dailySummaryEnabled: true,
+    hasCompletedOnboarding: false,
+    profileName: null,
+    isSecuritySetupCompleted: false,
   );
 }
 
 class SettingsNotifier extends StateNotifier<AppSettings> {
-  SettingsNotifier() : super(AppSettings.defaultSettings) {
-    loadSettings();
+  SettingsNotifier([AppSettings? initialSettings]) : super(initialSettings ?? AppSettings.defaultSettings) {
+    if (initialSettings == null) {
+      loadSettings();
+    }
+  }
+
+  static Future<AppSettings> loadInitialSettings() async {
+    String? loadPath;
+    
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      loadPath = '${directory.path}/app_settings.json';
+      
+      final file = File(loadPath);
+      final exists = await file.exists();
+      
+      if (exists) {
+        final contents = await file.readAsString();
+        final json = jsonDecode(contents) as Map<String, dynamic>;
+        return AppSettings.fromJson(json);
+      }
+    } catch (e) {
+      // Fallback/Mock support for testing environments where path_provider is not mocked
+      try {
+        final directory = Directory.systemTemp;
+        loadPath = '${directory.path}/app_settings.json';
+        
+        final file = File(loadPath);
+        final exists = await file.exists();
+        
+        if (exists) {
+          final contents = await file.readAsString();
+          final json = jsonDecode(contents) as Map<String, dynamic>;
+          return AppSettings.fromJson(json);
+        }
+      } catch (_) {}
+    }
+    return AppSettings.defaultSettings;
   }
 
   Future<File> get _localFile async {
     try {
       final directory = await getApplicationDocumentsDirectory();
-      return File('${directory.path}/app_settings.json');
-    } catch (_) {
-      // Fallback/Mock support for testing environments where path_provider is not mocked
+      final path = '${directory.path}/app_settings.json';
+      return File(path);
+    } catch (e) {
       final directory = Directory.systemTemp;
-      return File('${directory.path}/app_settings.json');
+      final path = '${directory.path}/app_settings.json';
+      return File(path);
     }
   }
 
@@ -135,10 +193,26 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _saveSettings();
   }
 
+  Future<void> updateOnboardingCompleted(bool completed) async {
+    state = state.copyWith(hasCompletedOnboarding: completed);
+    await _saveSettings();
+  }
+
+  Future<void> updateProfileName(String? profileName) async {
+    state = state.copyWith(profileName: profileName);
+    await _saveSettings();
+  }
+
+  Future<void> updateSecuritySetupCompleted(bool completed) async {
+    state = state.copyWith(isSecuritySetupCompleted: completed);
+    await _saveSettings();
+  }
+
   Future<void> _saveSettings() async {
     try {
       final file = await _localFile;
-      await file.writeAsString(jsonEncode(state.toJson()));
+      final jsonStr = jsonEncode(state.toJson());
+      await file.writeAsString(jsonStr);
     } catch (e) {
       debugPrint('Error saving settings: $e');
     }

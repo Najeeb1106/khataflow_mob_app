@@ -5,6 +5,7 @@ import '../../../dashboard/presentation/providers/dashboard_providers.dart';
 import '../../../khata/presentation/providers/khata_providers.dart';
 import '../../../people/presentation/providers/people_providers.dart';
 import '../../../people/presentation/providers/balance_providers.dart';
+import '../../../../core/services/notification_service.dart';
 
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   return LocalTransactionRepository();
@@ -66,6 +67,68 @@ class TransactionListNotifier
 
   Future<void> updateTransaction(Transaction transaction) async {
     try {
+      final existing = await _repository.getTransaction(transaction.uuid);
+      if (existing != null) {
+        final dueId = transaction.uuid.hashCode;
+        final remindId = transaction.uuid.hashCode + 1;
+
+        if (existing.dueDate != transaction.dueDate) {
+          await NotificationService().cancelNotification(dueId);
+          if (transaction.dueDate != null) {
+            try {
+              await NotificationService().scheduleNotification(
+                id: dueId,
+                title: 'Payment Due Alert',
+                body: 'Payment of PKR ${transaction.amount.toStringAsFixed(2)} is due now.',
+                scheduledDate: transaction.dueDate!,
+              );
+            } catch (e) {
+              // Ignore or log error so it does not block transaction update saving
+            }
+          }
+        } else if (transaction.dueDate != null && existing.amount != transaction.amount) {
+          await NotificationService().cancelNotification(dueId);
+          try {
+            await NotificationService().scheduleNotification(
+              id: dueId,
+              title: 'Payment Due Alert',
+              body: 'Payment of PKR ${transaction.amount.toStringAsFixed(2)} is due now.',
+              scheduledDate: transaction.dueDate!,
+            );
+          } catch (e) {
+            // Ignore or log error
+          }
+        }
+
+        if (existing.reminderDate != transaction.reminderDate) {
+          await NotificationService().cancelNotification(remindId);
+          if (transaction.reminderDate != null) {
+            try {
+              await NotificationService().scheduleNotification(
+                id: remindId,
+                title: 'Transaction Reminder',
+                body: 'Reminder for transaction of PKR ${transaction.amount.toStringAsFixed(2)}: ${transaction.notes ?? "No notes added."}',
+                scheduledDate: transaction.reminderDate!,
+              );
+            } catch (e) {
+              // Ignore or log error
+            }
+          }
+        } else if (transaction.reminderDate != null && (existing.amount != transaction.amount || existing.notes != transaction.notes)) {
+          await NotificationService().cancelNotification(remindId);
+          try {
+            await NotificationService().scheduleNotification(
+              id: remindId,
+              title: 'Transaction Reminder',
+              body: 'Reminder for transaction of PKR ${transaction.amount.toStringAsFixed(2)}: ${transaction.notes ?? "No notes added."}',
+              scheduledDate: transaction.reminderDate!,
+            );
+          } catch (e) {
+            // Ignore or log error
+          }
+        }
+      }
+
       await _repository.saveTransaction(transaction);
       await loadTransactions();
       await _invalidateAll();
@@ -76,6 +139,11 @@ class TransactionListNotifier
 
   Future<void> deleteTransaction(String uuid) async {
     try {
+      final dueId = uuid.hashCode;
+      final remindId = uuid.hashCode + 1;
+      await NotificationService().cancelNotification(dueId);
+      await NotificationService().cancelNotification(remindId);
+
       await _repository.deleteTransaction(uuid);
       await loadTransactions();
       await _invalidateAll();

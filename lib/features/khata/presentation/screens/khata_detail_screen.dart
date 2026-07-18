@@ -241,9 +241,11 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
                 error: (_, __) => const SizedBox(),
               ),
   
-              // Sort Row
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDesign.space24,
+                  vertical: AppDesign.space8,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -331,6 +333,7 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
               Expanded(
                 child: txsState.when(
                   data: (txs) {
+                    final bal = BalanceCalculator.calculate(txs);
                     // Apply filter
                     var filtered = List<Transaction>.from(txs);
                     if (_selectedFilter != 'All') {
@@ -369,6 +372,13 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
                           if (t.type == TransactionType.received ||
                               t.type == TransactionType.paid)
                             return false;
+                          final isReceivable = t.type == TransactionType.gave || 
+                              (t.type == TransactionType.adjustment && t.amount >= 0);
+                          final isPayable = t.type == TransactionType.borrowed || 
+                              (t.type == TransactionType.adjustment && t.amount < 0);
+                          if ((isReceivable && bal <= 0) || (isPayable && bal >= 0)) {
+                            return false;
+                          }
                           final due = DateTime(
                             t.dueDate!.year,
                             t.dueDate!.month,
@@ -387,6 +397,13 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
                           if (t.type == TransactionType.received ||
                               t.type == TransactionType.paid)
                             return false;
+                          final isReceivable = t.type == TransactionType.gave || 
+                              (t.type == TransactionType.adjustment && t.amount >= 0);
+                          final isPayable = t.type == TransactionType.borrowed || 
+                              (t.type == TransactionType.adjustment && t.amount < 0);
+                          if ((isReceivable && bal <= 0) || (isPayable && bal >= 0)) {
+                            return false;
+                          }
                           final due = DateTime(
                             t.dueDate!.year,
                             t.dueDate!.month,
@@ -448,7 +465,10 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
   
                     return ListView.builder(
                       itemCount: filtered.length,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDesign.space24,
+                        vertical: AppDesign.space8,
+                      ),
                       itemBuilder: (context, index) {
                         final tx = filtered[index];
                         final isOwed =
@@ -460,6 +480,7 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
   
                         final badgeDetails = BalanceCalculator.getDueBadgeDetails(
                           tx,
+                          bal,
                         );
                         final badgeLabel = badgeDetails['label'] as String;
                         final badgeColorName = badgeDetails['color'] as String;
@@ -890,69 +911,329 @@ class _KhataDetailScreenState extends ConsumerState<KhataDetailScreen> {
     );
     final notesController = TextEditingController(text: tx.notes ?? '');
 
+    // Mutable state managed inside StatefulBuilder
+    DateTime? editTransactionDate = tx.transactionDate;
+    DateTime? editDueDate = tx.dueDate;
+    DateTime? editReminderDate = tx.reminderDate;
+
+    final bool supportsDueDates = tx.type == TransactionType.gave ||
+        tx.type == TransactionType.borrowed;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
-        title: const Text(
-          'Edit Transaction',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppTextField(
-              controller: amountController,
-              labelText: 'Amount',
-              keyboardType: TextInputType.number,
-              prefixIcon: Icons.money_rounded,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: AppDesign.borderMedium),
+            title: const Text(
+              'Edit Transaction',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
-            AppTextField(
-              controller: notesController,
-              labelText: 'Notes',
-              prefixIcon: Icons.notes_rounded,
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Read-only type indicator
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.08),
+                      borderRadius: AppDesign.borderSmall,
+                      border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.lock_outline_rounded, size: 14, color: Colors.grey),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Type: ${tx.type.name.toUpperCase()} (cannot be changed)',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Amount
+                  AppTextField(
+                    controller: amountController,
+                    labelText: 'Amount',
+                    keyboardType: TextInputType.number,
+                    prefixIcon: Icons.money_rounded,
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Transaction Date
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: dialogContext,
+                        initialDate: editTransactionDate ?? DateTime.now(),
+                        firstDate: DateTime.now()
+                            .subtract(const Duration(days: 365 * 10)),
+                        lastDate:
+                            DateTime.now().add(const Duration(days: 365 * 5)),
+                      );
+                      if (picked != null) {
+                        setDialogState(() => editTransactionDate = picked);
+                      }
+                    },
+                    borderRadius: AppDesign.borderSmall,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppDesign.lightBorder),
+                        borderRadius: AppDesign.borderSmall,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 16,
+                            color: AppDesign.primaryEmerald,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              editTransactionDate != null
+                                  ? 'Date: ${editTransactionDate!.day}/${editTransactionDate!.month}/${editTransactionDate!.year}'
+                                  : 'Transaction Date (tap to set)',
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          const Icon(Icons.edit_rounded,
+                              size: 14, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Due Date & Reminder (only for GAVE / BORROWED)
+                  if (supportsDueDates) ...[
+                    const SizedBox(height: 10),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: dialogContext,
+                          initialDate: editDueDate ?? DateTime.now(),
+                          firstDate: DateTime.now()
+                              .subtract(const Duration(days: 365)),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 365 * 5)),
+                        );
+                        if (picked != null) {
+                          if (!dialogContext.mounted) return;
+                          final time = await showTimePicker(
+                            context: dialogContext,
+                            initialTime: TimeOfDay.fromDateTime(
+                              editDueDate ?? DateTime.now(),
+                            ),
+                          );
+                          if (time != null) {
+                            setDialogState(() => editDueDate = DateTime(
+                                  picked.year,
+                                  picked.month,
+                                  picked.day,
+                                  time.hour,
+                                  time.minute,
+                                ));
+                          }
+                        }
+                      },
+                      borderRadius: AppDesign.borderSmall,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppDesign.lightBorder),
+                          borderRadius: AppDesign.borderSmall,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.event_note_rounded,
+                              size: 16,
+                              color: AppDesign.primaryEmerald,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                editDueDate != null
+                                    ? 'Due: ${editDueDate!.day}/${editDueDate!.month}/${editDueDate!.year}'
+                                    : 'Due Date (Optional)',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: editDueDate != null
+                                      ? AppDesign.primaryEmerald
+                                      : Colors.grey,
+                                ),
+                              ),
+                            ),
+                            if (editDueDate != null)
+                              GestureDetector(
+                                onTap: () =>
+                                    setDialogState(() => editDueDate = null),
+                                child: const Icon(Icons.close_rounded,
+                                    size: 14, color: AppDesign.redPayable),
+                              )
+                            else
+                              const Icon(Icons.edit_rounded,
+                                  size: 14, color: Colors.grey),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: dialogContext,
+                          initialDate: editReminderDate ?? DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null) {
+                          if (!dialogContext.mounted) return;
+                          final time = await showTimePicker(
+                            context: dialogContext,
+                            initialTime: TimeOfDay.fromDateTime(
+                              editReminderDate ?? DateTime.now(),
+                            ),
+                          );
+                          if (time != null) {
+                            setDialogState(() => editReminderDate = DateTime(
+                                  picked.year,
+                                  picked.month,
+                                  picked.day,
+                                  time.hour,
+                                  time.minute,
+                                ));
+                          }
+                        }
+                      },
+                      borderRadius: AppDesign.borderSmall,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppDesign.lightBorder),
+                          borderRadius: AppDesign.borderSmall,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.notifications_active_outlined,
+                              size: 16,
+                              color: AppDesign.primaryTeal,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                editReminderDate != null
+                                    ? 'Remind: ${editReminderDate!.day}/${editReminderDate!.month}/${editReminderDate!.year}'
+                                    : 'Reminder Date (Optional)',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: editReminderDate != null
+                                      ? AppDesign.primaryTeal
+                                      : Colors.grey,
+                                ),
+                              ),
+                            ),
+                            if (editReminderDate != null)
+                              GestureDetector(
+                                onTap: () =>
+                                    setDialogState(() => editReminderDate = null),
+                                child: const Icon(Icons.close_rounded,
+                                    size: 14, color: AppDesign.redPayable),
+                              )
+                            else
+                              const Icon(Icons.edit_rounded,
+                                  size: 14, color: Colors.grey),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 10),
+                  // Notes
+                  AppTextField(
+                    controller: notesController,
+                    labelText: 'Notes',
+                    prefixIcon: Icons.notes_rounded,
+                  ),
+
+                  const SizedBox(height: 8),
+                  // Immutability hint
+                  const Text(
+                    'To change the type, delete this transaction and create a new one.',
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          AppButton(
-            onPressed: () async {
-              final newAmount =
-                  double.tryParse(amountController.text) ?? tx.amount;
-              final newNotes = notesController.text.trim();
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              ),
+              AppButton(
+                onPressed: () async {
+                  final newAmount =
+                      double.tryParse(amountController.text) ?? tx.amount;
+                  final newNotes = notesController.text.trim();
 
-              final updated = Transaction()
-                ..id = tx.id
-                ..uuid = tx.uuid
-                ..khataUuid = tx.khataUuid
-                ..type = tx.type
-                ..amount = newAmount
-                ..notes = newNotes.isEmpty ? null : newNotes
-                ..transactionDate = tx.transactionDate
-                ..dueDate = tx.dueDate
-                ..reminderDate = tx.reminderDate
-                ..createdAt = tx.createdAt
-                ..updatedAt = DateTime.now()
-                ..isDeleted = tx.isDeleted;
+                  final updated = Transaction()
+                    ..id = tx.id
+                    ..uuid = tx.uuid
+                    ..khataUuid = tx.khataUuid
+                    ..type = tx.type
+                    ..amount = newAmount
+                    ..notes = newNotes.isEmpty ? null : newNotes
+                    ..transactionDate = editTransactionDate ?? tx.transactionDate
+                    // Preserve due dates only for types that support them
+                    ..dueDate = supportsDueDates ? editDueDate : null
+                    ..reminderDate = supportsDueDates ? editReminderDate : null
+                    ..createdAt = tx.createdAt
+                    ..updatedAt = DateTime.now()
+                    ..isDeleted = tx.isDeleted;
 
-              await ref
-                  .read(transactionsForKhataProvider(widget.khataUuid).notifier)
-                  .updateTransaction(updated);
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Transaction updated!')),
-                );
-              }
-            },
-            label: 'Save',
-          ),
-        ],
+                  await ref
+                      .read(
+                        transactionsForKhataProvider(widget.khataUuid).notifier,
+                      )
+                      .updateTransaction(updated);
+                  if (dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Transaction updated!')),
+                    );
+                  }
+                },
+                label: 'Save',
+              ),
+            ],
+          );
+        },
       ),
     );
   }

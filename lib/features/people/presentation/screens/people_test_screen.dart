@@ -7,6 +7,7 @@ import '../../../khata/data/models/khata.dart';
 import '../../../khata/presentation/providers/khata_providers.dart';
 import '../../../transactions/data/models/transaction.dart';
 import '../../../transactions/presentation/providers/transaction_providers.dart';
+import '../../../../core/utils/phone_formatter.dart';
 
 class PeopleTestScreen extends ConsumerStatefulWidget {
   const PeopleTestScreen({super.key});
@@ -137,7 +138,11 @@ class _PeopleTestScreenState extends ConsumerState<PeopleTestScreen> {
                       fontSize: 16,
                     ),
                   ),
-                  subtitle: Text(person.phone ?? 'No phone'),
+                  subtitle: Text(
+                    person.phone != null && person.phone!.isNotEmpty
+                        ? PhoneFormatter.format(person.phone)
+                        : 'No phone',
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

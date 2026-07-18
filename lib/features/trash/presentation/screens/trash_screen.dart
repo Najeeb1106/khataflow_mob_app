@@ -8,6 +8,9 @@ import '../../../khata/data/models/khata.dart';
 import '../../../khata/presentation/providers/khata_providers.dart';
 import '../../../transactions/data/models/transaction.dart';
 import '../../../transactions/presentation/providers/transaction_providers.dart';
+import '../../../../core/presentation/design_system.dart';
+import '../../../../core/presentation/widgets/shared_widgets.dart';
+import '../../../../core/utils/phone_formatter.dart';
 
 class TrashScreen extends ConsumerStatefulWidget {
   const TrashScreen({super.key});
@@ -125,13 +128,20 @@ class _TrashScreenState extends ConsumerState<TrashScreen>
     if (_deletedPeople.isEmpty) return _buildEmptyState('No deleted contacts.');
     return ListView.builder(
       itemCount: _deletedPeople.length,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDesign.space24,
+        vertical: AppDesign.space16,
+      ),
       itemBuilder: (context, index) {
         final p = _deletedPeople[index];
         return Card(
           child: ListTile(
             title: Text(p.name),
-            subtitle: Text(p.phone ?? 'No phone'),
+            subtitle: Text(
+              p.phone != null && p.phone!.isNotEmpty
+                  ? PhoneFormatter.format(p.phone)
+                  : 'No phone',
+            ),
             trailing: IconButton(
               icon: const Icon(Icons.restore, color: Colors.teal),
               onPressed: () => _restorePerson(p),
@@ -146,7 +156,10 @@ class _TrashScreenState extends ConsumerState<TrashScreen>
     if (_deletedKhatas.isEmpty) return _buildEmptyState('No deleted Khatas.');
     return ListView.builder(
       itemCount: _deletedKhatas.length,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDesign.space24,
+        vertical: AppDesign.space16,
+      ),
       itemBuilder: (context, index) {
         final k = _deletedKhatas[index];
         return Card(
@@ -168,7 +181,10 @@ class _TrashScreenState extends ConsumerState<TrashScreen>
       return _buildEmptyState('No deleted transactions.');
     return ListView.builder(
       itemCount: _deletedTransactions.length,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDesign.space24,
+        vertical: AppDesign.space16,
+      ),
       itemBuilder: (context, index) {
         final tx = _deletedTransactions[index];
         return Card(
@@ -186,15 +202,10 @@ class _TrashScreenState extends ConsumerState<TrashScreen>
   }
 
   Widget _buildEmptyState(String text) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('🗑️', style: TextStyle(fontSize: 48)),
-          const SizedBox(height: 12),
-          Text(text, style: const TextStyle(color: Colors.grey, fontSize: 16)),
-        ],
-      ),
+    return EmptyState(
+      icon: '🗑️',
+      title: 'Trash Bin Empty',
+      subtitle: text,
     );
   }
 }

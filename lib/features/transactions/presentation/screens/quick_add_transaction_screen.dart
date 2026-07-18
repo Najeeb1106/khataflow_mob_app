@@ -97,6 +97,52 @@ class _QuickAddTransactionScreenState
       return;
     }
 
+    // ── Validation: RECEIVED requires a positive receivable balance ─────────
+    if (_selectedType == TransactionType.received) {
+      final txsState = ref.read(
+        transactionsForKhataProvider(_selectedKhata!.uuid),
+      );
+      final txs = txsState.valueOrNull ?? [];
+      double receivable = 0.0;
+      for (final tx in txs) {
+        if (tx.type == TransactionType.gave) receivable += tx.amount;
+        if (tx.type == TransactionType.received) receivable -= tx.amount;
+      }
+      if (receivable <= 0) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You have no outstanding amount to collect.'),
+            backgroundColor: AppDesign.amberWarning,
+          ),
+        );
+        return;
+      }
+    }
+
+    // ── Validation: REPAYMENT requires a positive borrowed balance ──────────
+    if (_selectedType == TransactionType.paid) {
+      final txsState = ref.read(
+        transactionsForKhataProvider(_selectedKhata!.uuid),
+      );
+      final txs = txsState.valueOrNull ?? [];
+      double borrowed = 0.0;
+      for (final tx in txs) {
+        if (tx.type == TransactionType.borrowed) borrowed += tx.amount;
+        if (tx.type == TransactionType.paid) borrowed -= tx.amount;
+      }
+      if (borrowed <= 0) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You have no borrowed amount to repay.'),
+            backgroundColor: AppDesign.amberWarning,
+          ),
+        );
+        return;
+      }
+    }
+
     final tx = Transaction()
       ..uuid = const Uuid().v4()
       ..khataUuid = _selectedKhata!.uuid
