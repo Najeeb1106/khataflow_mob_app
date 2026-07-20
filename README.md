@@ -1,4 +1,4 @@
-# KhataFlow v1.2.0
+# KhataFlow v1.0.3+5
 
 [![Flutter SDK](https://img.shields.io/badge/Flutter-^3.22.0-02569B?logo=flutter&logoColor=white)](#)
 [![Dart SDK](https://img.shields.io/badge/Dart-^3.4.0-0175C2?logo=dart&logoColor=white)](#)
@@ -8,6 +8,7 @@
 [![Export](https://img.shields.io/badge/Export-PDF-red)](#)
 [![Security](https://img.shields.io/badge/Security-Biometrics-blue)](#)
 [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+
 
 
 **KhataFlow** is a secure, offline-first personal ledger and expense bookkeeping manager built with Flutter. It helps individuals, freelancers, and small businesses track transactions, manage debts/credits, generate PDF statements, and set automated reminders—all without requiring an active internet connection.
@@ -136,10 +137,11 @@ We welcome community contributions! Please read our [Contribution Guidelines](CO
 
 ## 📜 Version History
 
-- **v1.2.0** (Current): Final production-ready release with unified confirmation dialogs, cached search queries, haptic triggers, PDF export history tracking, and build metadata.
-- **v1.1.1**: Shimmer loaders, custom snackbars, settings metadata, dialogs, and widget tests alignment.
-- **v1.1.0**: Google Fonts (Inter) layout, Cash Flow analytics charts, timeline swipe actions, storage metrics, and advanced search.
+- **v1.0.3** (Current): Final production-ready release with unified confirmation dialogs, cached search queries, haptic triggers, PDF export history tracking, and build metadata.
+- **v1.0.2**: Shimmer loaders, custom snackbars, settings metadata, dialogs, and widget tests alignment.
+- **v1.0.1**: Google Fonts (Inter) layout, Cash Flow analytics charts, timeline swipe actions, storage metrics, and advanced search.
 - **v1.0.0**: Initial Release (PIN authentication, Isar storage, PDF reports generator, notifications).
+
 
 ---
 

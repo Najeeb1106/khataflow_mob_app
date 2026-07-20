@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0] - 2026-06-27
+## [1.0.3] - 2026-07-20
 ### Added
 - Integrated cached search query history inside the Global Search screen.
 - Configured dynamic "Export History" tracking for generated PDF statements.
@@ -17,14 +17,15 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [1.1.1] - 2026-06-25
+## [1.0.2] - 2026-06-25
 ### Added
 - Implemented shimmer skeleton placeholders during card load times.
 - Integrated `google_fonts` (Inter) for standard body copy text.
 
 ---
 
-## [1.1.0] - 2026-06-20
+## [1.0.1] - 2026-06-20
+
 ### Added
 - Integrated monthly Cash Flow ratio trends widget via `fl_chart`.
 - Added swipe gestures for transaction entries (swipe left to delete, swipe right to edit).
