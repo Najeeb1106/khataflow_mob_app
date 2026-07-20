@@ -1,5 +1,7 @@
 # KhataFlow v1.0.3+5
 
+![KhataFlow Banner](screenshots/banner.png)
+
 [![Flutter SDK](https://img.shields.io/badge/Flutter-^3.22.0-02569B?logo=flutter&logoColor=white)](#)
 [![Dart SDK](https://img.shields.io/badge/Dart-^3.4.0-0175C2?logo=dart&logoColor=white)](#)
 [![Storage](https://img.shields.io/badge/Storage-Offline%20First-green)](#)
@@ -8,6 +10,7 @@
 [![Export](https://img.shields.io/badge/Export-PDF-red)](#)
 [![Security](https://img.shields.io/badge/Security-Biometrics-blue)](#)
 [![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+
 
 
 
