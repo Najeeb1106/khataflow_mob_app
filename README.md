@@ -17,10 +17,12 @@
 
 ## 📱 Features
 
-- **Biometric & PIN Lock Screen**: Fast, secure fingerprint and 4-digit PIN access powered by Android Keystore (SHA-256 salted hashes).
+- **Biometric & PIN Lock Screen**: Fast, secure fingerprint/face recognition and 4-digit PIN access powered by local hardware-backed storage (SHA-256 salted hashes).
 - **Offline-First Storage**: Local database operations using high-performance [Isar](https://isar.dev/) queries optimized for speed and large datasets (>50,000 transactions).
-- **Statement Generation & Sharing**: Create professionally formatted PDF ledger statements with running balance logs, status cards, and direct sharing to WhatsApp. Includes total exports logs and history.
-- **Ledger Reminders & Notifications**: Local notification alerts for scheduled reviews and a daily summary review.
+- **Local Backup & Restore**: Securely export your entire ledger database to a local file and restore it seamlessly on any device.
+- **Device Contact Integration**: Seamlessly import names and phone numbers directly from your phone's address book to quickly build ledger entries.
+- **Statement Generation & Sharing**: Create professionally formatted PDF ledger statements with running balance logs, status cards, and direct sharing options.
+- **Ledger Reminders & Notifications**: Set up local notifications and reminders to ensure timely updates and reviews.
 - **Trash Bin Recovery**: Safe deletion framework supporting soft-deletes and automatic 30-day purge management.
 - **Interactive Analytics**: Premium dashboard plotting monthly cash flow ratios and net ledger position charts using `fl_chart`.
 
@@ -37,6 +39,7 @@ graph TD
     D --> F[Local Secure Storage]
     C --> G[Local Notification Service]
     C --> H[PDF Generation Service]
+    C --> I[Backup & Contact Services]
 ```
 
 ---
@@ -48,9 +51,12 @@ graph TD
 - **Local Database**: [Isar Database](https://isar.dev)
 - **Local Notifications**: `flutter_local_notifications`
 - **PDF & Share**: `pdf`, `share_plus`, `url_launcher`
+- **Contacts**: `flutter_contacts` (Device address book integration)
+- **Storage & Files**: `file_picker`, `path_provider`, `flutter_secure_storage`
 - **Routing**: [GoRouter](https://pub.dev/packages/go_router)
 - **Charts**: `fl_chart`
 - **Fonts**: `google_fonts` (Inter)
+
 
 ---
 
